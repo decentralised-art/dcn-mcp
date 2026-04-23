@@ -1,0 +1,34 @@
+import unittest
+
+from dcn_mcp.registry import ToolRegistry
+from dcn_mcp.schemas import integer_schema, object_schema
+
+
+class RegistryTests(unittest.TestCase):
+    def test_registry_register_and_invoke(self):
+        registry = ToolRegistry()
+
+        @registry.tool(namespace="test", name="echo", description="echo", input_schema=object_schema({"a": integer_schema()}, required=["a"]))
+        def _echo(params):
+            return {"payload": params}
+
+        result = registry.invoke("test.echo", {"a": 1})
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["data"], {"payload": {"a": 1}})
+        described = registry.describe_tools()
+        self.assertEqual(described[0]["full_name"], "test.echo")
+
+    def test_registry_returns_validation_error_envelope(self):
+        registry = ToolRegistry()
+
+        @registry.tool(namespace="test", name="echo", description="echo", input_schema=object_schema({"a": integer_schema()}, required=["a"]))
+        def _echo(params):
+            return {"payload": params}
+
+        result = registry.invoke("test.echo", {"a": "bad"})
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "validation_error")
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dcn-mcp"
+version = "0.1.0"
+description = "Format-agnostic DCN tool layer with adapter-based specialist workflows"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "requests>=2.31.0",
+  "eth-account>=0.11.0",
+  "mcp>=1.27.0",
+]
+
+[project.scripts]
+dcn-mcp = "dcn_mcp.server:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"dcn_mcp" = ["resources/**/*.md", "assets/*.js"]

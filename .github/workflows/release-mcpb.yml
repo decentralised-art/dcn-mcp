@@ -1,0 +1,56 @@
+name: Release MCPB
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload-mcpb:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build local environment
+        run: make install
+
+      - name: Run test suite
+        run: make test
+
+      - name: Build MCPB bundle
+        run: make mcpb
+
+      - name: Locate bundle artifact
+        id: bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle_path="$(find dist -maxdepth 1 -type f -name '*.mcpb' | head -n 1)"
+          if [[ -z "${bundle_path}" ]]; then
+            echo "No .mcpb bundle found in dist/" >&2
+            exit 1
+          fi
+          echo "path=${bundle_path}" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "${bundle_path}")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.bundle.outputs.name }}
+          path: ${{ steps.bundle.outputs.path }}
+          if-no-files-found: error
+
+      - name: Upload bundle to GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" "${{ steps.bundle.outputs.path }}" --clobber

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from urllib.parse import quote
 
 import requests
 from eth_account.messages import encode_defunct
@@ -20,6 +21,15 @@ class DCNClient:
         })
         self.access_token: Optional[str] = None
 
+    def close(self) -> None:
+        self.session.close()
+
+    def __enter__(self) -> "DCNClient":
+        return self
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        self.close()
+
     def _handle_response(self, response: requests.Response) -> Any:
         try:
             data = response.json()
@@ -35,9 +45,10 @@ class DCNClient:
             return {}
         return {"Authorization": f"Bearer {self.access_token}"}
 
-    def _get(self, path: str) -> requests.Response:
+    def _get(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> requests.Response:
         return self.session.get(
             f"{self.base_url}{path}",
+            params=params,
             headers=self._authz_headers(),
             timeout=self.timeout,
         )
@@ -63,7 +74,7 @@ class DCNClient:
         return response
 
     def get_nonce(self, address: str) -> str:
-        response = self.session.get(f"{self.base_url}/nonce/{address}", timeout=self.timeout)
+        response = self.session.get(f"{self.base_url}/nonce/{_path_segment(address)}", timeout=self.timeout)
         response.raise_for_status()
         payload = response.json()
         if isinstance(payload, dict) and "nonce" in payload:
@@ -91,13 +102,13 @@ class DCNClient:
             raise RuntimeError(f"Auth failed — missing access token: {auth_result}")
 
     def get_connector(self, name: str) -> Dict[str, Any]:
-        return self._handle_response(self._get(f"/connector/{name}"))
+        return self._handle_response(self._get(f"/connector/{_path_segment(name)}"))
 
     def get_transformation(self, name: str) -> Dict[str, Any]:
-        return self._handle_response(self._get(f"/transformation/{name}"))
+        return self._handle_response(self._get(f"/transformation/{_path_segment(name)}"))
 
     def connector_exists(self, name: str) -> bool:
-        response = self._get(f"/connector/{name}")
+        response = self._get(f"/connector/{_path_segment(name)}")
         if response.status_code == 404:
             return False
         if response.ok:
@@ -106,7 +117,7 @@ class DCNClient:
         raise RuntimeError(f"Failed to check connector '{name}': {response.status_code} {body}")
 
     def transformation_exists(self, name: str) -> bool:
-        response = self._get(f"/transformation/{name}")
+        response = self._get(f"/transformation/{_path_segment(name)}")
         if response.status_code == 404:
             return False
         if response.ok:
@@ -135,16 +146,16 @@ class DCNClient:
         return data
 
     def list_formats(self, limit: int = 100, after: Optional[str] = None) -> Dict[str, Any]:
-        query = f"?limit={int(limit)}"
-        if after:
-            query += f"&after={after}"
-        return self._handle_response(self._get(f"/formats{query}"))
+        params: Dict[str, Any] = {"limit": int(limit)}
+        if after is not None:
+            params["after"] = after
+        return self._handle_response(self._get("/formats", params=params))
 
     def get_format(self, format_hash: str, limit: int = 256, after: Optional[str] = None) -> Dict[str, Any]:
-        query = f"?limit={int(limit)}"
-        if after:
-            query += f"&after={after}"
-        return self._handle_response(self._get(f"/format/{format_hash}{query}"))
+        params: Dict[str, Any] = {"limit": int(limit)}
+        if after is not None:
+            params["after"] = after
+        return self._handle_response(self._get(f"/format/{_path_segment(format_hash)}", params=params))
 
     def get_account(
         self,
@@ -155,14 +166,14 @@ class DCNClient:
         after_transformations: Optional[str] = None,
         after_conditions: Optional[str] = None,
     ) -> Dict[str, Any]:
-        query = f"?limit={int(limit)}"
-        if after_connectors:
-            query += f"&after_connectors={after_connectors}"
-        if after_transformations:
-            query += f"&after_transformations={after_transformations}"
-        if after_conditions:
-            query += f"&after_conditions={after_conditions}"
-        return self._handle_response(self._get(f"/account/{address}{query}"))
+        params: Dict[str, Any] = {"limit": int(limit)}
+        if after_connectors is not None:
+            params["after_connectors"] = after_connectors
+        if after_transformations is not None:
+            params["after_transformations"] = after_transformations
+        if after_conditions is not None:
+            params["after_conditions"] = after_conditions
+        return self._handle_response(self._get(f"/account/{_path_segment(address)}", params=params))
 
     def ensure_connectors_exist(self, names: Iterable[str]) -> None:
         missing = [name for name in names if not self.connector_exists(name)]
@@ -193,3 +204,7 @@ def resolve_cursor(payload: Dict[str, Any]) -> ChainCursor:
         has_more=bool(payload.get("has_more")),
         next_after=(str(payload.get("next_after")).strip() if payload.get("next_after") else None),
     )
+
+
+def _path_segment(value: object) -> str:
+    return quote(str(value).strip(), safe="")

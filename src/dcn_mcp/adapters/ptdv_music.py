@@ -5,7 +5,7 @@ import pathlib
 import subprocess
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from ..inspect import strip_index_suffix
+from ..inspect import coerce_int_stream, strip_index_suffix
 from ..registry import ToolRegistry
 from ..resources import ResourceRegistry
 from ..schemas import array_schema, integer_schema, object_schema, string_schema
@@ -26,18 +26,7 @@ BASE_CONNECTORS: Dict[str, str] = {
     "pitch": "pitch",
     "velocity": "velocity",
 }
-
-
-def _coerce_int_list(value: Any) -> List[int]:
-    if not isinstance(value, list):
-        return []
-    out: List[int] = []
-    for item in value:
-        try:
-            out.append(int(item))
-        except Exception:
-            continue
-    return out
+DEFAULT_MIDI_EXPORT_TIMEOUT_SECONDS = 30.0
 
 
 def parse_role(path: str) -> Optional[str]:
@@ -49,9 +38,13 @@ def parse_role(path: str) -> Optional[str]:
     return ROLE_ALIASES.get(tail)
 
 
-def group_note_streams(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, List[int]]], List[str]]:
+def group_note_streams_with_diagnostics(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, List[int]]], List[str], Dict[str, int]]:
     grouped: Dict[str, Dict[str, List[int]]] = {}
     unknown_paths: List[str] = []
+    diagnostics = {
+        "duplicate_stream_count": 0,
+        "invalid_value_count": 0,
+    }
     for sample in samples:
         path = str(sample.get("path") or sample.get("feature_path") or "").strip()
         if not path:
@@ -63,12 +56,24 @@ def group_note_streams(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[st
             continue
         segments = [segment for segment in path.split("/") if segment]
         group_key = "/" + "/".join(strip_index_suffix(segment) for segment in segments[:-1]) if len(segments) > 1 else "/root"
-        grouped.setdefault(group_key, {})[role] = _coerce_int_list(sample.get("data"))
+        values, invalid_count = coerce_int_stream(sample.get("data"))
+        diagnostics["invalid_value_count"] += invalid_count
+        streams = grouped.setdefault(group_key, {})
+        if role in streams:
+            diagnostics["duplicate_stream_count"] += 1
+            streams[role].extend(values)
+        else:
+            streams[role] = values
+    return grouped, unknown_paths, diagnostics
+
+
+def group_note_streams(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, List[int]]], List[str]]:
+    grouped, unknown_paths, _diagnostics = group_note_streams_with_diagnostics(samples)
     return grouped, unknown_paths
 
 
-def collect_note_events(samples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[str], List[str]]:
-    grouped, unknown_paths = group_note_streams(samples)
+def collect_note_events_with_diagnostics(samples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[str], List[str], Dict[str, int]]:
+    grouped, unknown_paths, diagnostics = group_note_streams_with_diagnostics(samples)
     events: List[Dict[str, Any]] = []
     usable_groups: List[str] = []
     for group_key, streams in grouped.items():
@@ -92,6 +97,11 @@ def collect_note_events(samples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, A
                     "velocity": int(velocity[index]),
                 }
             )
+    return events, unknown_paths, usable_groups, diagnostics
+
+
+def collect_note_events(samples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[str], List[str]]:
+    events, unknown_paths, usable_groups, _diagnostics = collect_note_events_with_diagnostics(samples)
     return events, unknown_paths, usable_groups
 
 
@@ -173,7 +183,7 @@ def build_player_payload(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     ]
 
 
-def export_midi(input_json: pathlib.Path, output_mid: pathlib.Path) -> Dict[str, Any]:
+def export_midi(input_json: pathlib.Path, output_mid: pathlib.Path, *, timeout: float = DEFAULT_MIDI_EXPORT_TIMEOUT_SECONDS) -> Dict[str, Any]:
     script_path = pathlib.Path(__file__).resolve().parent.parent / "assets" / "pt2midi.js"
     result = subprocess.run(
         ["node", str(script_path), str(input_json), str(output_mid)],
@@ -181,6 +191,7 @@ def export_midi(input_json: pathlib.Path, output_mid: pathlib.Path) -> Dict[str,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        timeout=float(timeout),
     )
     return {
         "script": str(script_path),
@@ -218,8 +229,8 @@ class PTDVMusicAdapter(FormatAdapter):
             input_schema=object_schema({"samples": array_schema()}, required=["samples"]),
         )
         def _extract(params: Dict[str, Any]) -> Dict[str, Any]:
-            events, unknown_paths, usable_groups = collect_note_events(list(params["samples"]))
-            return {"events": events, "unknown_paths": unknown_paths, "usable_groups": usable_groups}
+            events, unknown_paths, usable_groups, diagnostics = collect_note_events_with_diagnostics(list(params["samples"]))
+            return {"events": events, "unknown_paths": unknown_paths, "usable_groups": usable_groups, "diagnostics": diagnostics}
 
         @registry.tool(
             namespace="music",

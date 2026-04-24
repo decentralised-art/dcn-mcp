@@ -12,6 +12,10 @@ class FakeClient:
     def __init__(self, api_base, timeout):
         self.api_base = api_base
         self.timeout = timeout
+        self.closed = False
+
+    def close(self):
+        self.closed = True
 
     def connector_exists(self, name):
         return name == "pitch"
@@ -85,6 +89,11 @@ class CoreIntegrationTests(unittest.TestCase):
         self.assertEqual(result["data"]["limit"], 64)
         self.assertEqual(result["data"]["owned_connectors"], ["a", "b"])
 
+    def test_limit_zero_is_validation_error(self):
+        result = self.registry.invoke("core.get_account", {"address": "0xabc", "limit": 0})
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "validation_error")
+
     def test_execute_connector_uses_fake_client_and_account(self):
         result = self.registry.invoke("core.execute_connector", {"connector_name": "piece", "particles_count": 8})
         self.assertTrue(result["ok"])
@@ -95,6 +104,30 @@ class CoreIntegrationTests(unittest.TestCase):
         self.assertTrue(result["ok"])
         self.assertEqual(result["data"]["add"], "math_add_v1")
         self.assertEqual(result["data"]["address"], "0xabc")
+
+    def test_bad_transformation_pairs_are_validation_errors(self):
+        result = self.registry.invoke("core.resolve_transformation_pair", {"pairs": [["math_add_v1"]]})
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "validation_error")
+
+    def test_empty_transformation_pairs_do_not_fallback_to_defaults(self):
+        result = self.registry.invoke("core.resolve_transformation_pair", {"pairs": []})
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "validation_error")
+
+    def test_tool_context_closes_client_after_call(self):
+        created = []
+
+        def factory(api_base, timeout):
+            client = FakeClient(api_base, timeout)
+            created.append(client)
+            return client
+
+        set_runtime_overrides(client_factory=factory, account_loader=fake_account_loader)
+        result = self.registry.invoke("core.connector_exists", {"name": "pitch"})
+        self.assertTrue(result["ok"])
+        self.assertEqual(len(created), 1)
+        self.assertTrue(created[0].closed)
 
 
 if __name__ == "__main__":

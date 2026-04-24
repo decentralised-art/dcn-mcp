@@ -1,10 +1,15 @@
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from dcn_mcp.adapters.ptdv_music import (
     build_player_payload,
     build_wrapper_connector,
     classify_register,
     collect_note_events,
+    collect_note_events_with_diagnostics,
+    export_midi,
+    group_note_streams_with_diagnostics,
     summarize_note_events,
 )
 from dcn_mcp.tools.core import build_parent_connector
@@ -54,6 +59,32 @@ class PTDVMusicTests(unittest.TestCase):
         self.assertEqual(payload[1]["data"], [0, 4])
         self.assertEqual(payload[2]["data"], [1, 3])
         self.assertEqual(payload[3]["data"], [127, 100])
+
+    def test_duplicate_note_streams_are_appended_not_overwritten(self):
+        samples = SAMPLES + [{"path": "/cell:1/pitch:0", "data": [55]}]
+        grouped, unknown, diagnostics = group_note_streams_with_diagnostics(samples)
+        self.assertEqual(unknown, [])
+        self.assertEqual(grouped["/cell"]["pitch"], [48, 52, 55])
+        self.assertEqual(diagnostics["duplicate_stream_count"], 1)
+
+    def test_collect_note_events_reports_invalid_values(self):
+        events, unknown, groups, diagnostics = collect_note_events_with_diagnostics([
+            {"path": "/cell:0/pitch:0", "data": [48, "bad"]},
+            {"path": "/cell:0/time:0", "data": [0]},
+            {"path": "/cell:0/duration:0", "data": [2]},
+            {"path": "/cell:0/velocity:0", "data": [80]},
+        ])
+        self.assertEqual(len(events), 1)
+        self.assertEqual(unknown, [])
+        self.assertEqual(groups, ["/cell"])
+        self.assertEqual(diagnostics["invalid_value_count"], 1)
+
+    def test_export_midi_passes_timeout_to_node_process(self):
+        with patch("dcn_mcp.adapters.ptdv_music.subprocess.run") as run:
+            run.return_value.stdout = "ok"
+            result = export_midi(Path("in.json"), Path("out.mid"), timeout=5)
+            self.assertEqual(result["stdout"], "ok")
+            self.assertEqual(run.call_args.kwargs["timeout"], 5.0)
 
 
 if __name__ == "__main__":

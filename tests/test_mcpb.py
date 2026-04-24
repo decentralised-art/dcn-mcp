@@ -18,6 +18,7 @@ class McpbTests(TestCase):
         self.assertIn("api_base", manifest["user_config"])
         self.assertIn("private_key", manifest["user_config"])
         self.assertIn("dcn_timeout", manifest["user_config"])
+        self.assertIn("artifact_root", manifest["user_config"])
         self.assertTrue(any(tool["name"] == "core.build_parent_connector" for tool in manifest["tools"]))
 
     def test_build_bundle_writes_expected_files(self) -> None:

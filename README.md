@@ -110,6 +110,7 @@ PYTHONPATH = "/path/to/dcn-mcp/src"
 API_BASE = "https://api.decentralised.art/chain"
 PRIVATE_KEY = "<optional>"
 DCN_TIMEOUT = "15"
+DCN_ARTIFACT_ROOT = "/path/to/dcn-mcp/dcn-mcp-artifacts"
 ```
 
 Notes:
@@ -163,6 +164,7 @@ PYTHONPATH=/path/to/dcn-mcp/src
 API_BASE=https://api.decentralised.art/chain
 PRIVATE_KEY=<your-private-key-if-you-want-authenticated-live-DCN-actions>
 DCN_TIMEOUT=15
+DCN_ARTIFACT_ROOT=/path/to/dcn-mcp/dcn-mcp-artifacts
 ```
 
 ## Example MCP Config Snippet
@@ -179,7 +181,8 @@ Use this as a generic starting point for an MCP-capable host that accepts JSON s
       "PYTHONPATH": "/path/to/dcn-mcp/src",
       "API_BASE": "https://api.decentralised.art/chain",
       "PRIVATE_KEY": "<optional>",
-      "DCN_TIMEOUT": "15"
+      "DCN_TIMEOUT": "15",
+      "DCN_ARTIFACT_ROOT": "/path/to/dcn-mcp/dcn-mcp-artifacts"
     }
   }
 }
@@ -215,6 +218,7 @@ PYTHONPATH = "/path/to/dcn-mcp/src"
 API_BASE = "https://api.decentralised.art/chain"
 PRIVATE_KEY = "<optional>"
 DCN_TIMEOUT = "15"
+DCN_ARTIFACT_ROOT = "/path/to/dcn-mcp/dcn-mcp-artifacts"
 ```
 
 Codex CLI and the Codex app share this configuration.
@@ -234,7 +238,8 @@ VS Code reads either workspace `.vscode/mcp.json` or user-profile MCP configurat
         "PYTHONPATH": "/path/to/dcn-mcp/src",
         "API_BASE": "https://api.decentralised.art/chain",
         "PRIVATE_KEY": "<optional>",
-        "DCN_TIMEOUT": "15"
+        "DCN_TIMEOUT": "15",
+        "DCN_ARTIFACT_ROOT": "/path/to/dcn-mcp/dcn-mcp-artifacts"
       }
     }
   }
@@ -256,7 +261,8 @@ Cursor supports project `.cursor/mcp.json` and global `~/.cursor/mcp.json`. For 
         "PYTHONPATH": "/path/to/dcn-mcp/src",
         "API_BASE": "https://api.decentralised.art/chain",
         "PRIVATE_KEY": "<optional>",
-        "DCN_TIMEOUT": "15"
+        "DCN_TIMEOUT": "15",
+        "DCN_ARTIFACT_ROOT": "/path/to/dcn-mcp/dcn-mcp-artifacts"
       }
     }
   }
@@ -277,7 +283,8 @@ Claude Code supports project-scoped `.mcp.json` files and a `claude mcp add` wor
         "PYTHONPATH": "/path/to/dcn-mcp/src",
         "API_BASE": "https://api.decentralised.art/chain",
         "PRIVATE_KEY": "<optional>",
-        "DCN_TIMEOUT": "15"
+        "DCN_TIMEOUT": "15",
+        "DCN_ARTIFACT_ROOT": "/path/to/dcn-mcp/dcn-mcp-artifacts"
       }
     }
   }
@@ -291,6 +298,7 @@ claude mcp add --transport stdio --scope project \
   --env PYTHONPATH=/path/to/dcn-mcp/src \
   --env API_BASE=https://api.decentralised.art/chain \
   --env DCN_TIMEOUT=15 \
+  --env DCN_ARTIFACT_ROOT=/path/to/dcn-mcp/dcn-mcp-artifacts \
   dcn -- /path/to/dcn-mcp/.venv/bin/python -m dcn_mcp.server stdio
 ```
 
@@ -347,6 +355,7 @@ If you want the server to inherit the repo-local environment cleanly, run it wit
 PYTHONPATH=/path/to/dcn-mcp/src \
 API_BASE=https://api.decentralised.art/chain \
 DCN_TIMEOUT=15 \
+DCN_ARTIFACT_ROOT=/path/to/dcn-mcp/dcn-mcp-artifacts \
 npx @modelcontextprotocol/inspector \
   /path/to/dcn-mcp/.venv/bin/python \
   -m dcn_mcp.server stdio
@@ -363,6 +372,9 @@ These are the main runtime settings:
   - required for authenticated operations such as deploy/execute on protected endpoints
 - `DCN_TIMEOUT`
   - request timeout in seconds
+- `DCN_ARTIFACT_ROOT`
+  - directory where artifact-writing tools are allowed to create files
+  - default: `dcn-mcp-artifacts`
 
 ## Verify That It Actually Works
 

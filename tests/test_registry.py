@@ -29,6 +29,19 @@ class RegistryTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertEqual(result["error"]["code"], "validation_error")
 
+    def test_registry_does_not_expose_raw_internal_exception_messages(self):
+        registry = ToolRegistry()
+
+        @registry.tool(namespace="test", name="boom", description="boom", input_schema=object_schema())
+        def _boom(_params):
+            raise RuntimeError("secret-token /tmp/private")
+
+        result = registry.invoke("test.boom", {})
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "internal_tool_error")
+        self.assertEqual(result["error"]["message"], "Internal tool error.")
+        self.assertNotIn("secret-token", str(result["error"]))
+
 
 if __name__ == "__main__":
     unittest.main()

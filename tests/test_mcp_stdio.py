@@ -18,7 +18,7 @@ class MCPStdioTests(unittest.TestCase):
         async def _run():
             env = dict(os.environ)
             existing_path = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = str(SRC) if not existing_path else f"{SRC}:{existing_path}"
+            env["PYTHONPATH"] = str(SRC) if not existing_path else str(SRC) + os.pathsep + existing_path
             server = StdioServerParameters(
                 command=sys.executable,
                 args=["-m", "dcn_mcp.server", "stdio"],

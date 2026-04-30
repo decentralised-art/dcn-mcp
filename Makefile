@@ -1,7 +1,7 @@
-SHELL := /bin/zsh
-ROOT_DIR := $(abspath .)
+PYTHON ?= python3
+ROOT_DIR := $(CURDIR)
 VENV_DIR := $(ROOT_DIR)/.venv
-PYTHON := $(VENV_DIR)/bin/python
+VENV_PYTHON := $(shell "$(PYTHON)" -c "import os; root=r'''$(VENV_DIR)'''; sub='Scripts' if os.name == 'nt' else 'bin'; exe='python.exe' if os.name == 'nt' else 'python'; print(os.path.join(root, sub, exe))")
 STAMP := $(VENV_DIR)/.bootstrap-complete
 
 .DEFAULT_GOAL := help
@@ -21,36 +21,35 @@ help:
 	@echo "  make read-core-primer Read the core primer resource"
 	@echo "  make invoke-example Run a sample local tool invocation"
 
-$(STAMP): pyproject.toml scripts/bootstrap_venv.sh
-	./scripts/bootstrap_venv.sh
-	@touch $(STAMP)
+$(STAMP): pyproject.toml scripts/bootstrap_venv.py
+	"$(PYTHON)" scripts/bootstrap_venv.py
 
 install: $(STAMP)
 	@echo "dcn-mcp is installed in $(VENV_DIR)"
 
 smoke: $(STAMP)
-	./scripts/smoke_test.sh
+	"$(VENV_PYTHON)" scripts/smoke_test.py
 
 test: $(STAMP)
-	source $(VENV_DIR)/bin/activate && python -m unittest discover -s tests -v
+	"$(VENV_PYTHON)" -m unittest discover -s tests -v
 
 stdio: $(STAMP)
-	./scripts/run_stdio.sh
+	"$(VENV_PYTHON)" -m dcn_mcp.server stdio
 
 mcpb: $(STAMP)
-	./scripts/build_mcpb.sh
+	"$(VENV_PYTHON)" -m dcn_mcp.mcpb
 
 list-tools: $(STAMP)
-	source $(VENV_DIR)/bin/activate && python -m dcn_mcp.server list-tools
+	"$(VENV_PYTHON)" -m dcn_mcp.server list-tools
 
 list-resources: $(STAMP)
-	source $(VENV_DIR)/bin/activate && python -m dcn_mcp.server list-resources
+	"$(VENV_PYTHON)" -m dcn_mcp.server list-resources
 
 list-adapters: $(STAMP)
-	source $(VENV_DIR)/bin/activate && python -m dcn_mcp.server list-adapters
+	"$(VENV_PYTHON)" -m dcn_mcp.server list-adapters
 
 read-core-primer: $(STAMP)
-	source $(VENV_DIR)/bin/activate && python -m dcn_mcp.server read-resource core.dcn_core_primer
+	"$(VENV_PYTHON)" -m dcn_mcp.server read-resource core.dcn_core_primer
 
 invoke-example: $(STAMP)
-	source $(VENV_DIR)/bin/activate && python -m dcn_mcp.server invoke core.build_parent_connector '{"name":"piece","child_names":["a","b"]}'
+	"$(VENV_PYTHON)" -m dcn_mcp.server invoke core.build_parent_connector '{"name":"piece","child_names":["a","b"]}'

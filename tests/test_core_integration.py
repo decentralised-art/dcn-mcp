@@ -12,6 +12,10 @@ class FakeClient:
     def __init__(self, api_base, timeout):
         self.api_base = api_base
         self.timeout = timeout
+        self.closed = False
+
+    def close(self):
+        self.closed = True
 
     def connector_exists(self, name):
         return name == "pitch"
@@ -19,11 +23,34 @@ class FakeClient:
     def transformation_exists(self, name):
         return name == "math_add_v1"
 
+    def condition_exists(self, name):
+        return name == "always_true"
+
     def get_connector(self, name):
         return {"name": name, "dimensions": []}
 
     def get_transformation(self, name):
         return {"name": name, "code": "// solidity"}
+
+    def get_condition(self, name):
+        return {"name": name, "code": "// condition"}
+
+    def get_feed_page(self, *, limit=100, before=None, event_type=None, include_unfinalized=None):
+        return {
+            "events": [{"feed_id": "connector:a", "event_type": "connector_added", "seq": 1}],
+            "cursor": {"has_more": False, "next_before": None},
+            "limit": limit,
+            "before": before,
+            "type": event_type,
+            "include_unfinalized": include_unfinalized,
+        }
+
+    def get_feed_stream_replay(self, *, since_seq=0, limit=200):
+        return {
+            "deltas": [{"event": "event_delta", "id": str(since_seq + 1), "data": {"seq": since_seq + 1}}],
+            "meta": {"replay_count": 1, "limit": limit},
+            "comments": [],
+        }
 
     def list_formats(self, limit=100, after=None):
         return {"formats": ["fmt1"], "limit": limit, "after": after}
@@ -52,6 +79,12 @@ class FakeClient:
     def post_connector(self, payload, acct):
         return {"name": payload.get("name"), "owner": acct.address}
 
+    def post_transformation(self, payload, acct):
+        return {"name": payload.get("name"), "owner": acct.address}
+
+    def post_condition(self, payload, acct):
+        return {"name": payload.get("name"), "owner": acct.address}
+
     def execute_connector(self, acct, connector_name, particles_count, dynamic_ri=None):
         return [{"path": "/cell:0/pitch:0", "data": [60]}]
 
@@ -78,6 +111,29 @@ class CoreIntegrationTests(unittest.TestCase):
         self.assertTrue(result["ok"])
         self.assertEqual(result["data"], {"name": "math_add_v1", "exists": True})
 
+    def test_condition_exists_uses_fake_client(self):
+        result = self.registry.invoke("core.condition_exists", {"name": "always_true"})
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["data"], {"name": "always_true", "exists": True})
+
+    def test_get_condition_uses_fake_client(self):
+        result = self.registry.invoke("core.get_condition", {"name": "always_true"})
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["data"], {"name": "always_true", "code": "// condition"})
+
+    def test_get_feed_page_uses_fake_client(self):
+        result = self.registry.invoke("core.get_feed_page", {"limit": 50, "type": "connector_added", "include_unfinalized": True})
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["data"]["limit"], 50)
+        self.assertEqual(result["data"]["type"], "connector_added")
+        self.assertTrue(result["data"]["include_unfinalized"])
+
+    def test_get_feed_stream_replay_uses_fake_client(self):
+        result = self.registry.invoke("core.get_feed_stream_replay", {"since_seq": 5, "limit": 10})
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["data"]["deltas"][0]["data"]["seq"], 6)
+        self.assertEqual(result["data"]["meta"]["limit"], 10)
+
     def test_get_account_uses_fake_client(self):
         result = self.registry.invoke("core.get_account", {"address": "0xabc", "limit": 64})
         self.assertTrue(result["ok"])
@@ -85,16 +141,53 @@ class CoreIntegrationTests(unittest.TestCase):
         self.assertEqual(result["data"]["limit"], 64)
         self.assertEqual(result["data"]["owned_connectors"], ["a", "b"])
 
+    def test_limit_zero_is_validation_error(self):
+        result = self.registry.invoke("core.get_account", {"address": "0xabc", "limit": 0})
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "validation_error")
+
     def test_execute_connector_uses_fake_client_and_account(self):
         result = self.registry.invoke("core.execute_connector", {"connector_name": "piece", "particles_count": 8})
         self.assertTrue(result["ok"])
         self.assertEqual(result["data"]["samples"][0]["data"], [60])
+
+    def test_deploy_transformation_and_condition_use_fake_client_and_account(self):
+        transformation = self.registry.invoke("core.deploy_transformation", {"payload": {"name": "xform"}})
+        condition = self.registry.invoke("core.deploy_condition", {"payload": {"name": "cond"}})
+        self.assertTrue(transformation["ok"])
+        self.assertTrue(condition["ok"])
+        self.assertEqual(transformation["data"], {"name": "xform", "owner": "0xabc"})
+        self.assertEqual(condition["data"], {"name": "cond", "owner": "0xabc"})
 
     def test_ensure_preflight_uses_fake_client_and_account(self):
         result = self.registry.invoke("core.ensure_preflight", {"required_connectors": ["pitch", "time"]})
         self.assertTrue(result["ok"])
         self.assertEqual(result["data"]["add"], "math_add_v1")
         self.assertEqual(result["data"]["address"], "0xabc")
+
+    def test_bad_transformation_pairs_are_validation_errors(self):
+        result = self.registry.invoke("core.resolve_transformation_pair", {"pairs": [["math_add_v1"]]})
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "validation_error")
+
+    def test_empty_transformation_pairs_do_not_fallback_to_defaults(self):
+        result = self.registry.invoke("core.resolve_transformation_pair", {"pairs": []})
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "validation_error")
+
+    def test_tool_context_closes_client_after_call(self):
+        created = []
+
+        def factory(api_base, timeout):
+            client = FakeClient(api_base, timeout)
+            created.append(client)
+            return client
+
+        set_runtime_overrides(client_factory=factory, account_loader=fake_account_loader)
+        result = self.registry.invoke("core.connector_exists", {"name": "pitch"})
+        self.assertTrue(result["ok"])
+        self.assertEqual(len(created), 1)
+        self.assertTrue(created[0].closed)
 
 
 if __name__ == "__main__":

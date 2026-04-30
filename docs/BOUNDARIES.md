@@ -7,7 +7,9 @@ The core layer may know about:
 - authentication
 - connectors
 - transformations
+- conditions
 - formats
+- event feed discovery and SSE replay
 - execution samples
 - names
 - generic artifact writing

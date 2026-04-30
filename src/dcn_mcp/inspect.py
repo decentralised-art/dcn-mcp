@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Any, Dict, List, Tuple
 
 
@@ -14,9 +15,47 @@ def strip_index_suffix(segment: str) -> str:
     return str(segment)
 
 
-def group_samples_by_parent(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, List[int]]], List[str]]:
+def coerce_int_stream(value: Any) -> Tuple[List[int], int]:
+    if not isinstance(value, list):
+        return [], 1
+    values: List[int] = []
+    invalid_count = 0
+    for item in value:
+        try:
+            values.append(int(item))
+        except (TypeError, ValueError, OverflowError):
+            invalid_count += 1
+    return values, invalid_count
+
+
+def coerce_number_stream(value: Any) -> Tuple[List[float], int]:
+    if not isinstance(value, list):
+        return [], 1
+    values: List[float] = []
+    invalid_count = 0
+    for item in value:
+        if isinstance(item, bool):
+            invalid_count += 1
+            continue
+        try:
+            number = float(item)
+        except (TypeError, ValueError, OverflowError):
+            invalid_count += 1
+            continue
+        if not math.isfinite(number):
+            invalid_count += 1
+            continue
+        values.append(number)
+    return values, invalid_count
+
+
+def group_samples_by_parent_with_diagnostics(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, List[int]]], List[str], Dict[str, int]]:
     grouped: Dict[str, Dict[str, List[int]]] = {}
     unknown_paths: List[str] = []
+    diagnostics = {
+        "duplicate_stream_count": 0,
+        "invalid_value_count": 0,
+    }
     for sample in samples:
         path = sample_path(sample)
         if not path:
@@ -27,19 +66,25 @@ def group_samples_by_parent(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Di
             unknown_paths.append(path)
             continue
         leaf = strip_index_suffix(segments[-1]) or "unknown"
-        group_key = "/" + "/".join(strip_index_suffix(segment) for segment in segments[:-1]) if len(segments) > 1 else "/root"
-        values: List[int] = []
-        for item in list(sample.get("data") or []):
-            try:
-                values.append(int(item))
-            except Exception:
-                pass
-        grouped.setdefault(group_key, {})[leaf] = values
+        group_key = "/" + "/".join(segments[:-1]) if len(segments) > 1 else "/root"
+        values, invalid_count = coerce_int_stream(sample.get("data"))
+        diagnostics["invalid_value_count"] += invalid_count
+        streams = grouped.setdefault(group_key, {})
+        if leaf in streams:
+            diagnostics["duplicate_stream_count"] += 1
+            streams[leaf].extend(values)
+        else:
+            streams[leaf] = values
+    return grouped, unknown_paths, diagnostics
+
+
+def group_samples_by_parent(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, List[int]]], List[str]]:
+    grouped, unknown_paths, _diagnostics = group_samples_by_parent_with_diagnostics(samples)
     return grouped, unknown_paths
 
 
 def summarize_samples(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
-    grouped, unknown_paths = group_samples_by_parent(samples)
+    grouped, unknown_paths, diagnostics = group_samples_by_parent_with_diagnostics(samples)
     path_count = 0
     max_stream_length = 0
     leaves = set()
@@ -56,4 +101,5 @@ def summarize_samples(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
         "unknown_path_count": len(unknown_paths),
         "unknown_paths": unknown_paths[:16],
         "max_stream_length": max_stream_length,
+        **diagnostics,
     }

@@ -2,6 +2,16 @@
 
 PTDV composition interprets `pitch`, `time`, `duration`, and `velocity` as note-event fields.
 
+Current MIDI scalar contract:
+- `pitch`: MIDI note number, `0..127`
+- `velocity`: MIDI velocity, `0..127`; zero is a valid silent note-on velocity
+- `time`: beat position, starting at beat `0`
+- `duration`: beat length, strictly greater than `0`
+
+`durationv2` and `duration_v2` are accepted as aliases for `duration`.
+
+Execution paths preserve connector lineage. Two sibling composites with the same connector name but different indexed path segments, such as `/cell:0/...` and `/cell:1/...`, must remain separate note groups. Do not collapse those paths by connector name when diagnosing which branch produced which notes.
+
 Recommended workflow:
 1. deploy reusable vocabulary connectors
 2. preview actual executions

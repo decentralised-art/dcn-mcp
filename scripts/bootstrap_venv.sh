@@ -1,17 +1,7 @@
-#!/bin/zsh
-set -euo pipefail
+#!/usr/bin/env sh
+set -eu
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-VENV_DIR="$ROOT_DIR/.venv"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
-if [[ ! -d "$VENV_DIR" ]]; then
-  "$PYTHON_BIN" -m venv "$VENV_DIR"
-fi
-
-source "$VENV_DIR/bin/activate"
-pip install --upgrade pip
-pip install -e "$ROOT_DIR"
-
-echo "Bootstrapped venv at $VENV_DIR"
-echo "Activate with: source $VENV_DIR/bin/activate"
+"$PYTHON_BIN" "$ROOT_DIR/scripts/bootstrap_venv.py"

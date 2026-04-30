@@ -45,6 +45,6 @@ def error_to_payload(exc: Exception) -> Dict[str, Any]:
     if isinstance(exc, DCNMCPError):
         return exc.to_payload()
     return InternalToolError(
-        str(exc) or exc.__class__.__name__,
+        "Internal tool error.",
         details={"exception_type": exc.__class__.__name__},
     ).to_payload()

@@ -1,10 +1,15 @@
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from dcn_mcp.adapters.ptdv_music import (
     build_player_payload,
     build_wrapper_connector,
     classify_register,
     collect_note_events,
+    collect_note_events_with_diagnostics,
+    export_midi,
+    group_note_streams_with_diagnostics,
     summarize_note_events,
 )
 from dcn_mcp.tools.core import build_parent_connector
@@ -22,11 +27,12 @@ class PTDVMusicTests(unittest.TestCase):
     def test_collect_and_summarize_note_events(self):
         events, unknown, groups = collect_note_events(SAMPLES)
         self.assertEqual(unknown, [])
-        self.assertEqual(groups, ["/cell"])
+        self.assertEqual(groups, ["/cell:0"])
         summary = summarize_note_events(events)
         self.assertEqual(summary["event_count"], 2)
         self.assertEqual(summary["pitch_min"], 48)
         self.assertEqual(classify_register(summary)["label"], "bass")
+        self.assertEqual(events[0]["source_paths"], ["/cell:0/duration:0", "/cell:0/pitch:0", "/cell:0/time:0", "/cell:0/velocity:0"])
 
     def test_build_wrapper_connector_adds_time_transform_and_static_ri(self):
         base = {
@@ -52,8 +58,47 @@ class PTDVMusicTests(unittest.TestCase):
         ])
         self.assertEqual(payload[0]["data"], [127, 60])
         self.assertEqual(payload[1]["data"], [0, 4])
-        self.assertEqual(payload[2]["data"], [1, 3])
+        self.assertEqual(payload[2]["data"], [0, 3])
         self.assertEqual(payload[3]["data"], [127, 100])
+
+    def test_duplicate_same_name_branches_preserve_indexed_lineage(self):
+        samples = SAMPLES + [{"path": "/cell:1/pitch:0", "data": [55]}]
+        grouped, unknown, diagnostics = group_note_streams_with_diagnostics(samples)
+        self.assertEqual(unknown, [])
+        self.assertEqual(grouped["/cell:0"]["pitch"], [48.0, 52.0])
+        self.assertEqual(grouped["/cell:1"]["pitch"], [55.0])
+        self.assertEqual(diagnostics["duplicate_stream_count"], 0)
+
+    def test_collect_note_events_reports_invalid_values(self):
+        events, unknown, groups, diagnostics = collect_note_events_with_diagnostics([
+            {"path": "/cell:0/pitch:0", "data": [48, "bad"]},
+            {"path": "/cell:0/time:0", "data": [0]},
+            {"path": "/cell:0/duration:0", "data": [2]},
+            {"path": "/cell:0/velocity:0", "data": [80]},
+        ])
+        self.assertEqual(len(events), 1)
+        self.assertEqual(unknown, [])
+        self.assertEqual(groups, ["/cell:0"])
+        self.assertEqual(diagnostics["invalid_value_count"], 1)
+
+    def test_collect_note_events_uses_beats_and_allows_zero_velocity(self):
+        events, _unknown, _groups, diagnostics = collect_note_events_with_diagnostics([
+            {"path": "/cell:0/pitch:0", "data": [60]},
+            {"path": "/cell:0/time:0", "data": [1.5]},
+            {"path": "/cell:0/duration:0", "data": [0.25]},
+            {"path": "/cell:0/velocity:0", "data": [0]},
+        ])
+        self.assertEqual(diagnostics["skipped_note_count"], 0)
+        self.assertEqual(events[0]["time"], 1.5)
+        self.assertEqual(events[0]["duration"], 0.25)
+        self.assertEqual(events[0]["velocity"], 0)
+
+    def test_export_midi_passes_timeout_to_node_process(self):
+        with patch("dcn_mcp.adapters.ptdv_music.subprocess.run") as run:
+            run.return_value.stdout = "ok"
+            result = export_midi(Path("in.json"), Path("out.mid"), timeout=5)
+            self.assertEqual(result["stdout"], "ok")
+            self.assertEqual(run.call_args.kwargs["timeout"], 5.0)
 
 
 if __name__ == "__main__":

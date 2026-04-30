@@ -143,10 +143,10 @@ function convertPTToMIDIEvents(ptResponse) {
     const bucket = noteBuckets.get(instr) || { trackIndex, channel, notes: [] };
     for (let i = 0; i < len; i++) {
       bucket.notes.push({
-        midinote: Number(g.pitch[i]) | 0,
-        time: Number(tArr[i]) | 0,
-        duration: Array.isArray(dArr) ? (Number(dArr[i]) | 0) : 1,
-        velocity: Array.isArray(vArr) ? (Number(vArr[i]) | 0) : 80
+        midinote: Number(g.pitch[i]),
+        time: Number(tArr[i]),
+        duration: Array.isArray(dArr) ? Number(dArr[i]) : 1,
+        velocity: Array.isArray(vArr) ? Number(vArr[i]) : 80
       });
     }
     noteBuckets.set(instr, bucket);
@@ -171,7 +171,7 @@ function writeSMF(payload, outPath) {
   conductorEvents
     .sort((a, b) => (a.time - b.time) || (a.type === 'tempo' ? -1 : 1))
     .forEach((evt) => {
-      const tick = Math.round((PPQ * evt.time) / 4);
+      const tick = Math.round(PPQ * Math.max(0, Number(evt.time) || 0));
       if (evt.type === 'tempo') conductor.add(tick, JZZ.MIDI.smfBPM(evt.bpm));
       if (evt.type === 'timeSig') conductor.add(tick, JZZ.MIDI.smfTimeSignature(evt.numerator, evt.denominator));
       maxTick = Math.max(maxTick, tick);
@@ -198,10 +198,12 @@ function writeSMF(payload, outPath) {
     trk.add(0, JZZ.MIDI.program(channel, meta.program));
 
     bucket.notes.forEach((n) => {
-      const on = Math.round((PPQ * n.time) / 4);
-      const off = Math.round((PPQ * (n.time + Math.max(0, n.duration))) / 4);
-      const vel = Math.max(0, Math.min(127, n.velocity));
-      const pitch = Math.max(0, Math.min(127, n.midinote));
+      const time = Math.max(0, Number.isFinite(n.time) ? n.time : 0);
+      const duration = Math.max(0, Number.isFinite(n.duration) ? n.duration : 0);
+      const on = Math.round(PPQ * time);
+      const off = Math.max(on + 1, Math.round(PPQ * (time + duration)));
+      const vel = Math.max(0, Math.min(127, Math.round(Number.isFinite(n.velocity) ? n.velocity : 80)));
+      const pitch = Math.max(0, Math.min(127, Math.round(Number.isFinite(n.midinote) ? n.midinote : 0)));
       trk.add(on, JZZ.MIDI.noteOn(channel, pitch, vel));
       trk.add(off, JZZ.MIDI.noteOff(channel, pitch, 0));
       maxTick = Math.max(maxTick, on, off);

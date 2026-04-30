@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from ..inspect import group_samples_by_parent, summarize_samples
+from ..inspect import group_samples_by_parent_with_diagnostics, summarize_samples
 
 
 def register(registry) -> None:
@@ -13,8 +13,8 @@ def register(registry) -> None:
         input_schema={"type": "object", "properties": {"samples": {"type": "array"}}, "required": ["samples"]},
     )
     def _group(params: Dict[str, Any]) -> Dict[str, Any]:
-        grouped, unknown_paths = group_samples_by_parent(list(params["samples"]))
-        return {"grouped": grouped, "unknown_paths": unknown_paths}
+        grouped, unknown_paths, diagnostics = group_samples_by_parent_with_diagnostics(list(params["samples"]))
+        return {"grouped": grouped, "unknown_paths": unknown_paths, "diagnostics": diagnostics}
 
     @registry.tool(
         namespace="inspect",

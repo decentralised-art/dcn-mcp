@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Any, Dict, List, Tuple
 
 
@@ -27,6 +28,27 @@ def coerce_int_stream(value: Any) -> Tuple[List[int], int]:
     return values, invalid_count
 
 
+def coerce_number_stream(value: Any) -> Tuple[List[float], int]:
+    if not isinstance(value, list):
+        return [], 1
+    values: List[float] = []
+    invalid_count = 0
+    for item in value:
+        if isinstance(item, bool):
+            invalid_count += 1
+            continue
+        try:
+            number = float(item)
+        except (TypeError, ValueError, OverflowError):
+            invalid_count += 1
+            continue
+        if not math.isfinite(number):
+            invalid_count += 1
+            continue
+        values.append(number)
+    return values, invalid_count
+
+
 def group_samples_by_parent_with_diagnostics(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, List[int]]], List[str], Dict[str, int]]:
     grouped: Dict[str, Dict[str, List[int]]] = {}
     unknown_paths: List[str] = []
@@ -44,7 +66,7 @@ def group_samples_by_parent_with_diagnostics(samples: List[Dict[str, Any]]) -> T
             unknown_paths.append(path)
             continue
         leaf = strip_index_suffix(segments[-1]) or "unknown"
-        group_key = "/" + "/".join(strip_index_suffix(segment) for segment in segments[:-1]) if len(segments) > 1 else "/root"
+        group_key = "/" + "/".join(segments[:-1]) if len(segments) > 1 else "/root"
         values, invalid_count = coerce_int_stream(sample.get("data"))
         diagnostics["invalid_value_count"] += invalid_count
         streams = grouped.setdefault(group_key, {})

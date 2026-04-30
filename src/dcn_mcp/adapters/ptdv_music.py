@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
+import math
 import pathlib
 import subprocess
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from ..inspect import coerce_int_stream, strip_index_suffix
+from ..inspect import coerce_number_stream, strip_index_suffix
 from ..registry import ToolRegistry
 from ..resources import ResourceRegistry
 from ..schemas import array_schema, integer_schema, object_schema, string_schema
@@ -38,12 +39,13 @@ def parse_role(path: str) -> Optional[str]:
     return ROLE_ALIASES.get(tail)
 
 
-def group_note_streams_with_diagnostics(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, List[int]]], List[str], Dict[str, int]]:
-    grouped: Dict[str, Dict[str, List[int]]] = {}
+def _group_note_stream_records_with_diagnostics(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, Dict[str, Any]]], List[str], Dict[str, int]]:
+    grouped: Dict[str, Dict[str, Dict[str, Any]]] = {}
     unknown_paths: List[str] = []
     diagnostics = {
         "duplicate_stream_count": 0,
         "invalid_value_count": 0,
+        "skipped_note_count": 0,
     }
     for sample in samples:
         path = str(sample.get("path") or sample.get("feature_path") or "").strip()
@@ -55,46 +57,69 @@ def group_note_streams_with_diagnostics(samples: List[Dict[str, Any]]) -> Tuple[
             unknown_paths.append(path)
             continue
         segments = [segment for segment in path.split("/") if segment]
-        group_key = "/" + "/".join(strip_index_suffix(segment) for segment in segments[:-1]) if len(segments) > 1 else "/root"
-        values, invalid_count = coerce_int_stream(sample.get("data"))
+        group_key = "/" + "/".join(segments[:-1]) if len(segments) > 1 else "/root"
+        values, invalid_count = coerce_number_stream(sample.get("data"))
         diagnostics["invalid_value_count"] += invalid_count
         streams = grouped.setdefault(group_key, {})
         if role in streams:
             diagnostics["duplicate_stream_count"] += 1
-            streams[role].extend(values)
+            streams[role]["values"].extend(values)
+            streams[role]["paths"].append(path)
         else:
-            streams[role] = values
+            streams[role] = {"values": values, "paths": [path]}
     return grouped, unknown_paths, diagnostics
 
 
-def group_note_streams(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, List[int]]], List[str]]:
+def group_note_streams_with_diagnostics(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, List[float]]], List[str], Dict[str, int]]:
+    records, unknown_paths, diagnostics = _group_note_stream_records_with_diagnostics(samples)
+    grouped = {
+        group_key: {role: list(record["values"]) for role, record in streams.items()}
+        for group_key, streams in records.items()
+    }
+    return grouped, unknown_paths, diagnostics
+
+
+def group_note_streams(samples: List[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, List[float]]], List[str]]:
     grouped, unknown_paths, _diagnostics = group_note_streams_with_diagnostics(samples)
     return grouped, unknown_paths
 
 
 def collect_note_events_with_diagnostics(samples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[str], List[str], Dict[str, int]]:
-    grouped, unknown_paths, diagnostics = group_note_streams_with_diagnostics(samples)
+    grouped, unknown_paths, diagnostics = _group_note_stream_records_with_diagnostics(samples)
     events: List[Dict[str, Any]] = []
     usable_groups: List[str] = []
     for group_key, streams in grouped.items():
         if any(role not in streams for role in REQUIRED_ROLES):
             continue
         usable_groups.append(group_key)
-        pitch = list(streams["pitch"])
-        time_stream = list(streams["time"])
-        duration = list(streams["duration"])
-        velocity = list(streams["velocity"])
+        pitch = list(streams["pitch"]["values"])
+        time_stream = list(streams["time"]["values"])
+        duration = list(streams["duration"]["values"])
+        velocity = list(streams["velocity"]["values"])
         count = min(len(pitch), len(time_stream), len(duration), len(velocity))
         for index in range(count):
-            if int(duration[index]) <= 0 or int(velocity[index]) <= 0:
+            pitch_value = float(pitch[index])
+            time_value = float(time_stream[index])
+            duration_value = float(duration[index])
+            velocity_value = float(velocity[index])
+            if pitch_value < 0 or pitch_value > 127 or time_value < 0 or duration_value <= 0 or velocity_value < 0 or velocity_value > 127:
+                diagnostics["skipped_note_count"] += 1
                 continue
             events.append(
                 {
                     "group": group_key,
-                    "pitch": int(pitch[index]),
-                    "time": int(time_stream[index]),
-                    "duration": int(duration[index]),
-                    "velocity": int(velocity[index]),
+                    "pitch": int(round(pitch_value)),
+                    "time": _clean_number(time_value),
+                    "duration": _clean_number(duration_value),
+                    "velocity": int(round(velocity_value)),
+                    "source_paths": sorted(
+                        {
+                            *streams["pitch"]["paths"],
+                            *streams["time"]["paths"],
+                            *streams["duration"]["paths"],
+                            *streams["velocity"]["paths"],
+                        }
+                    ),
                 }
             )
     return events, unknown_paths, usable_groups, diagnostics
@@ -123,7 +148,7 @@ def summarize_note_events(events: List[Dict[str, Any]]) -> Dict[str, Any]:
             "events": [],
         }
     ordered = sorted(events, key=lambda item: (item["time"], item["pitch"]))
-    gaps = [max(0, int(ordered[index]["time"]) - int(ordered[index - 1]["time"])) for index in range(1, len(ordered))]
+    gaps = [max(0.0, float(ordered[index]["time"]) - float(ordered[index - 1]["time"])) for index in range(1, len(ordered))]
     pitches = sorted(item["pitch"] for item in ordered)
     return {
         "event_count": len(ordered),
@@ -174,13 +199,29 @@ def build_wrapper_connector(base_connector: Dict[str, Any], *, wrapper_name: str
 
 
 def build_player_payload(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    ordered = sorted(events, key=lambda item: (item["time"], item["pitch"], item["velocity"]))
+    ordered = sorted(events, key=lambda item: (_float_value(item.get("time")), _float_value(item.get("pitch")), _float_value(item.get("velocity"))))
     return [
-        {"path": "/composition/pitch", "data": [max(0, min(127, int(item["pitch"]))) for item in ordered]},
-        {"path": "/composition/time", "data": [max(0, int(item["time"])) for item in ordered]},
-        {"path": "/composition/duration", "data": [max(1, min(127, int(item["duration"]))) for item in ordered]},
-        {"path": "/composition/velocity", "data": [max(1, min(127, int(item["velocity"]))) for item in ordered]},
+        {"path": "/composition/pitch", "data": [_midi_value(item.get("pitch")) for item in ordered]},
+        {"path": "/composition/time", "data": [_clean_number(max(0.0, _float_value(item.get("time")))) for item in ordered]},
+        {"path": "/composition/duration", "data": [_clean_number(max(0.0, _float_value(item.get("duration")))) for item in ordered]},
+        {"path": "/composition/velocity", "data": [_midi_value(item.get("velocity")) for item in ordered]},
     ]
+
+
+def _float_value(value: Any, default: float = 0.0) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return default
+    return number if math.isfinite(number) else default
+
+
+def _midi_value(value: Any) -> int:
+    return max(0, min(127, int(round(_float_value(value)))))
+
+
+def _clean_number(value: float) -> Any:
+    return int(value) if float(value).is_integer() else value
 
 
 def export_midi(input_json: pathlib.Path, output_mid: pathlib.Path, *, timeout: float = DEFAULT_MIDI_EXPORT_TIMEOUT_SECONDS) -> Dict[str, Any]:
@@ -206,7 +247,11 @@ class PTDVMusicAdapter(FormatAdapter):
     description = "PTDV/music specialist adapter for note-event extraction, register analysis, wrapper construction, and MIDI export."
 
     def supports_leaves(self, leaves: Iterable[str]) -> bool:
-        return set(REQUIRED_ROLES).issubset({str(item).lower() for item in leaves})
+        normalized = {
+            ROLE_ALIASES.get(strip_index_suffix(str(item).strip().lower()), str(item).strip().lower())
+            for item in leaves
+        }
+        return set(REQUIRED_ROLES).issubset(normalized)
 
     def register_resources(self, registry: ResourceRegistry) -> None:
         base = pathlib.Path(__file__).resolve().parent.parent / "resources" / "music"

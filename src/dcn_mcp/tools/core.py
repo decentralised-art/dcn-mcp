@@ -5,13 +5,15 @@ from typing import Any, Dict, Iterable, List, Sequence, Tuple
 from ..config import DEFAULT_PREFERRED_TRANSFORMATION_PAIRS, MAX_TIMEOUT_SECONDS, MIN_TIMEOUT_SECONDS
 from ..context import context_from_params
 from ..errors import ValidationError
-from ..schemas import array_schema, integer_schema, number_schema, object_schema, string_schema
+from ..schemas import array_schema, boolean_schema, integer_schema, number_schema, object_schema, string_schema
 
 MAX_PAGE_LIMIT = 256
+MAX_STREAM_REPLAY_LIMIT = 2048
 MAX_PARTICLES_COUNT = 65536
 
 TIMEOUT_SCHEMA = number_schema(minimum=MIN_TIMEOUT_SECONDS, maximum=MAX_TIMEOUT_SECONDS)
 PAGE_LIMIT_SCHEMA = integer_schema(minimum=1, maximum=MAX_PAGE_LIMIT)
+STREAM_REPLAY_LIMIT_SCHEMA = integer_schema(minimum=1, maximum=MAX_STREAM_REPLAY_LIMIT)
 PARTICLES_COUNT_SCHEMA = integer_schema(minimum=1, maximum=MAX_PARTICLES_COUNT)
 TRANSFORMATION_PAIR_SCHEMA = array_schema(string_schema(min_length=1), min_items=2, max_items=2)
 TRANSFORMATION_PAIRS_SCHEMA = array_schema(TRANSFORMATION_PAIR_SCHEMA, min_items=1)
@@ -104,6 +106,16 @@ def register(registry) -> None:
 
     @registry.tool(
         namespace="core",
+        name="get_condition",
+        description="Fetch a condition payload by name.",
+        input_schema=object_schema({"name": string_schema(min_length=1), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["name"]),
+    )
+    def _get_condition(params: Dict[str, Any]) -> Dict[str, Any]:
+        with context_from_params(params) as ctx:
+            return ctx.client().get_condition(str(params["name"]))
+
+    @registry.tool(
+        namespace="core",
         name="transformation_exists",
         description="Check whether a transformation exists on the DCN.",
         input_schema=object_schema({"name": string_schema(min_length=1), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["name"]),
@@ -111,6 +123,60 @@ def register(registry) -> None:
     def _transformation_exists(params: Dict[str, Any]) -> Dict[str, Any]:
         with context_from_params(params) as ctx:
             return {"name": params["name"], "exists": ctx.client().transformation_exists(str(params["name"]))}
+
+    @registry.tool(
+        namespace="core",
+        name="condition_exists",
+        description="Check whether a condition exists on the DCN.",
+        input_schema=object_schema({"name": string_schema(min_length=1), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["name"]),
+    )
+    def _condition_exists(params: Dict[str, Any]) -> Dict[str, Any]:
+        with context_from_params(params) as ctx:
+            return {"name": params["name"], "exists": ctx.client().condition_exists(str(params["name"]))}
+
+    @registry.tool(
+        namespace="core",
+        name="get_feed_page",
+        description="Fetch a page from the DCN event feed.",
+        input_schema=object_schema(
+            {
+                "limit": PAGE_LIMIT_SCHEMA,
+                "before": string_schema(),
+                "type": string_schema(),
+                "include_unfinalized": boolean_schema(),
+                "api_base": string_schema(),
+                "timeout": TIMEOUT_SCHEMA,
+            },
+        ),
+    )
+    def _get_feed_page(params: Dict[str, Any]) -> Dict[str, Any]:
+        with context_from_params(params) as ctx:
+            return ctx.client().get_feed_page(
+                limit=_optional_int(params, "limit", default=100, minimum=1, maximum=MAX_PAGE_LIMIT),
+                before=params.get("before"),
+                event_type=params.get("type"),
+                include_unfinalized=params.get("include_unfinalized"),
+            )
+
+    @registry.tool(
+        namespace="core",
+        name="get_feed_stream_replay",
+        description="Read a bounded replay from the DCN event feed SSE stream.",
+        input_schema=object_schema(
+            {
+                "since_seq": integer_schema(minimum=0),
+                "limit": STREAM_REPLAY_LIMIT_SCHEMA,
+                "api_base": string_schema(),
+                "timeout": TIMEOUT_SCHEMA,
+            },
+        ),
+    )
+    def _get_feed_stream_replay(params: Dict[str, Any]) -> Dict[str, Any]:
+        with context_from_params(params) as ctx:
+            return ctx.client().get_feed_stream_replay(
+                since_seq=_optional_int(params, "since_seq", default=0, minimum=0, maximum=2**63 - 1),
+                limit=_optional_int(params, "limit", default=200, minimum=1, maximum=MAX_STREAM_REPLAY_LIMIT),
+            )
 
     @registry.tool(
         namespace="core",
@@ -168,6 +234,26 @@ def register(registry) -> None:
     def _deploy_connector(params: Dict[str, Any]) -> Dict[str, Any]:
         with context_from_params(params) as ctx:
             return ctx.client().post_connector(dict(params["payload"]), ctx.account())
+
+    @registry.tool(
+        namespace="core",
+        name="deploy_transformation",
+        description="Deploy a transformation payload to the DCN.",
+        input_schema=object_schema({"payload": object_schema(), "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["payload"]),
+    )
+    def _deploy_transformation(params: Dict[str, Any]) -> Dict[str, Any]:
+        with context_from_params(params) as ctx:
+            return ctx.client().post_transformation(dict(params["payload"]), ctx.account())
+
+    @registry.tool(
+        namespace="core",
+        name="deploy_condition",
+        description="Deploy a condition payload to the DCN.",
+        input_schema=object_schema({"payload": object_schema(), "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["payload"]),
+    )
+    def _deploy_condition(params: Dict[str, Any]) -> Dict[str, Any]:
+        with context_from_params(params) as ctx:
+            return ctx.client().post_condition(dict(params["payload"]), ctx.account())
 
     @registry.tool(
         namespace="core",

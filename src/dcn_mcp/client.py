@@ -40,6 +40,14 @@ class DCNClient:
             raise requests.HTTPError(f"{response.status_code} {data}", response=response)
         return data
 
+    def _handle_sse_replay_response(self, response: requests.Response) -> Dict[str, Any]:
+        if not response.ok:
+            self._handle_response(response)
+        try:
+            return parse_sse_replay_lines(response.iter_lines(decode_unicode=True))
+        finally:
+            response.close()
+
     def _authz_headers(self) -> Dict[str, str]:
         if not self.access_token:
             return {}
@@ -107,6 +115,9 @@ class DCNClient:
     def get_transformation(self, name: str) -> Dict[str, Any]:
         return self._handle_response(self._get(f"/transformation/{_path_segment(name)}"))
 
+    def get_condition(self, name: str) -> Dict[str, Any]:
+        return self._handle_response(self._get(f"/condition/{_path_segment(name)}"))
+
     def connector_exists(self, name: str) -> bool:
         response = self._get(f"/connector/{_path_segment(name)}")
         if response.status_code == 404:
@@ -125,8 +136,23 @@ class DCNClient:
         body = (response.text or "").strip().replace("\n", " ")
         raise RuntimeError(f"Failed to check transformation '{name}': {response.status_code} {body}")
 
+    def condition_exists(self, name: str) -> bool:
+        response = self._get(f"/condition/{_path_segment(name)}")
+        if response.status_code == 404:
+            return False
+        if response.ok:
+            return True
+        body = (response.text or "").strip().replace("\n", " ")
+        raise RuntimeError(f"Failed to check condition '{name}': {response.status_code} {body}")
+
     def post_connector(self, payload: Dict[str, Any], acct) -> Dict[str, Any]:
         return self._handle_response(self._post_with_reauth("/connector", payload, acct))
+
+    def post_transformation(self, payload: Dict[str, Any], acct) -> Dict[str, Any]:
+        return self._handle_response(self._post_with_reauth("/transformation", payload, acct))
+
+    def post_condition(self, payload: Dict[str, Any], acct) -> Dict[str, Any]:
+        return self._handle_response(self._post_with_reauth("/condition", payload, acct))
 
     def execute_connector(
         self,
@@ -175,6 +201,33 @@ class DCNClient:
             params["after_conditions"] = after_conditions
         return self._handle_response(self._get(f"/account/{_path_segment(address)}", params=params))
 
+    def get_feed_page(
+        self,
+        *,
+        limit: int = 100,
+        before: Optional[str] = None,
+        event_type: Optional[str] = None,
+        include_unfinalized: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        params: Dict[str, Any] = {"limit": int(limit)}
+        if before is not None:
+            params["before"] = before
+        if event_type is not None:
+            params["type"] = event_type
+        if include_unfinalized is not None:
+            params["include_unfinalized"] = 1 if include_unfinalized else 0
+        return self._handle_response(self._get("/feed", params=params))
+
+    def get_feed_stream_replay(self, *, since_seq: int = 0, limit: int = 200) -> Dict[str, Any]:
+        response = self.session.get(
+            f"{self.base_url}/feed/stream",
+            params={"since_seq": int(since_seq), "limit": int(limit)},
+            headers=self._authz_headers(),
+            timeout=self.timeout,
+            stream=True,
+        )
+        return self._handle_sse_replay_response(response)
+
     def ensure_connectors_exist(self, names: Iterable[str]) -> None:
         missing = [name for name in names if not self.connector_exists(name)]
         if missing:
@@ -208,3 +261,67 @@ def resolve_cursor(payload: Dict[str, Any]) -> ChainCursor:
 
 def _path_segment(value: object) -> str:
     return quote(str(value).strip(), safe="")
+
+
+def parse_sse_replay_lines(lines: Iterable[Any]) -> Dict[str, Any]:
+    deltas: List[Dict[str, Any]] = []
+    comments: List[str] = []
+    meta: Optional[Any] = None
+    event_name = "message"
+    event_id: Optional[str] = None
+    data_lines: List[str] = []
+
+    def flush_frame() -> Optional[Dict[str, Any]]:
+        nonlocal event_name, event_id, data_lines
+        if not data_lines:
+            event_name = "message"
+            event_id = None
+            data_lines = []
+            return None
+        data_raw = "\n".join(data_lines)
+        try:
+            data: Any = json.loads(data_raw)
+        except json.JSONDecodeError:
+            data = data_raw
+        frame = {"event": event_name, "id": event_id, "data": data}
+        event_name = "message"
+        event_id = None
+        data_lines = []
+        return frame
+
+    def consume_frame(frame: Optional[Dict[str, Any]]) -> bool:
+        nonlocal meta
+        if frame is None:
+            return False
+        if frame["event"] == "stream_meta":
+            meta = frame["data"]
+            return True
+        deltas.append(frame)
+        return False
+
+    for raw_line in lines:
+        line = raw_line.decode("utf-8") if isinstance(raw_line, bytes) else str(raw_line)
+        line = line.rstrip("\r\n")
+        if line == "":
+            if consume_frame(flush_frame()):
+                break
+            continue
+        if line.startswith(":"):
+            comments.append(line[1:].strip())
+            continue
+        field, separator, value = line.partition(":")
+        if not separator:
+            continue
+        if value.startswith(" "):
+            value = value[1:]
+        if field == "event":
+            event_name = value or "message"
+        elif field == "id":
+            event_id = value
+        elif field == "data":
+            data_lines.append(value)
+
+    if meta is None:
+        consume_frame(flush_frame())
+
+    return {"deltas": deltas, "meta": meta, "comments": comments}

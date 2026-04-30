@@ -1,6 +1,6 @@
 import unittest
 
-from dcn_mcp.client import DCNClient
+from dcn_mcp.client import DCNClient, parse_sse_replay_lines
 
 
 class FakeResponse:
@@ -8,14 +8,22 @@ class FakeResponse:
     status_code = 200
     text = ""
 
-    def __init__(self, payload):
+    def __init__(self, payload, *, lines=None):
         self.payload = payload
+        self.lines = lines or []
+        self.closed = False
 
     def json(self):
         return self.payload
 
     def raise_for_status(self):
         return None
+
+    def iter_lines(self, decode_unicode=False):
+        return iter(self.lines)
+
+    def close(self):
+        self.closed = True
 
 
 class FakeSession:
@@ -51,6 +59,50 @@ class ClientTests(unittest.TestCase):
         client.get_format("abc/def", limit=1)
 
         self.assertEqual(session.calls[0][1], "https://api.example/chain/format/abc%2Fdef")
+
+    def test_condition_uses_condition_endpoint(self):
+        client = DCNClient("https://api.example/chain")
+        session = FakeSession()
+        client.session = session
+
+        client.get_condition("cond/a")
+
+        self.assertEqual(session.calls[0][1], "https://api.example/chain/condition/cond%2Fa")
+
+    def test_feed_page_uses_current_cursor_and_type_params(self):
+        client = DCNClient("https://api.example/chain")
+        session = FakeSession()
+        client.session = session
+
+        client.get_feed_page(limit=7, before="42:abc", event_type="connector_added", include_unfinalized=True)
+
+        self.assertEqual(session.calls[0][1], "https://api.example/chain/feed")
+        self.assertEqual(
+            session.calls[0][2]["params"],
+            {"limit": 7, "before": "42:abc", "type": "connector_added", "include_unfinalized": 1},
+        )
+
+    def test_parse_sse_replay_lines_stops_at_stream_meta(self):
+        payload = parse_sse_replay_lines(
+            [
+                ": connected",
+                "id: 9",
+                "event: event_delta",
+                'data: {"feed_id":"connector:demo","seq":9}',
+                "",
+                "event: stream_meta",
+                'data: {"replay_count":1,"live":false}',
+                "",
+                "event: event_delta",
+                'data: {"feed_id":"ignored"}',
+                "",
+            ]
+        )
+
+        self.assertEqual(payload["comments"], ["connected"])
+        self.assertEqual(payload["deltas"][0]["id"], "9")
+        self.assertEqual(payload["deltas"][0]["data"]["feed_id"], "connector:demo")
+        self.assertEqual(payload["meta"], {"replay_count": 1, "live": False})
 
     def test_client_close_closes_session(self):
         client = DCNClient("https://api.example/chain")

@@ -265,6 +265,11 @@ class PTDVMusicAdapter(FormatAdapter):
             description="Practical PTDV/music register maps for piano-oriented pitch ranges.",
             path=base / "register_maps.md",
         )
+        registry.register_markdown(
+            name="music.score_templates_workflow",
+            description="Studio score template workflow guidance for editable semantic slot collectors and Music Score composition.",
+            path=base / "score_templates_workflow.md",
+        )
 
     def register_tools(self, registry: ToolRegistry) -> None:
         @registry.tool(

@@ -17,8 +17,13 @@ class ResourceTests(unittest.TestCase):
         resource = resources.read("music.score_templates_workflow")
         self.assertEqual(resource["mime_type"], "text/markdown")
         self.assertIn("local editable draft arrangements", resource["text"])
+        self.assertIn("score_full_v2", resource["text"])
+        self.assertIn("score_meter_v2", resource["text"])
         self.assertIn("score_notes_v1", resource["text"])
+        self.assertIn("score_onset", resource["text"])
+        self.assertIn("score_duration", resource["text"])
         self.assertIn("trees within trees", resource["text"])
+        self.assertIn("add` transformation with argument `1", resource["text"])
         self.assertEqual(resource["uri"], resource_uri("music.score_templates_workflow"))
 
 

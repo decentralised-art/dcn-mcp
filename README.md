@@ -50,7 +50,7 @@ It also exposes MCP resources such as:
 - `core.dcn_core_primer`
 - `music.ptdv_music_workflow`
 - `music.register_maps`
-- `music.score_templates_workflow`
+- `music.score_position_schema_workflow`
 
 ## Quick Start
 

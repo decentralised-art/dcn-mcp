@@ -266,9 +266,9 @@ class PTDVMusicAdapter(FormatAdapter):
             path=base / "register_maps.md",
         )
         registry.register_markdown(
-            name="music.score_templates_workflow",
-            description="Studio score template workflow guidance for editable semantic slot collectors and Music Score composition.",
-            path=base / "score_templates_workflow.md",
+            name="music.score_position_schema_workflow",
+            description="Studio Music Score position-schema guidance for root layers, note tables, reusable shapers, and RI deployment semantics.",
+            path=base / "score_position_schema_workflow.md",
         )
 
     def register_tools(self, registry: ToolRegistry) -> None:

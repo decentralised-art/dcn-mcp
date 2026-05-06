@@ -23,7 +23,8 @@ class ServerTests(unittest.TestCase):
         resource_names = {item["name"] for item in resources.describe_resources()}
         self.assertIn("core.dcn_core_primer", resource_names)
         self.assertIn("music.ptdv_music_workflow", resource_names)
-        self.assertIn("music.score_templates_workflow", resource_names)
+        self.assertIn("music.score_position_schema_workflow", resource_names)
+        self.assertNotIn("music.score_templates_workflow", resource_names)
 
 
 if __name__ == "__main__":

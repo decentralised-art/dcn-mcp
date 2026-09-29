@@ -7,6 +7,7 @@ import subprocess
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from ..inspect import coerce_number_stream, strip_index_suffix
+from ..lifecycle import execution_particles
 from ..registry import ToolRegistry
 from ..resources import ResourceRegistry
 from ..schemas import array_schema, integer_schema, object_schema, string_schema
@@ -47,7 +48,7 @@ def _group_note_stream_records_with_diagnostics(samples: List[Dict[str, Any]]) -
         "invalid_value_count": 0,
         "skipped_note_count": 0,
     }
-    for sample in samples:
+    for sample in execution_particles(samples) if isinstance(samples, dict) else samples:
         path = str(sample.get("path") or sample.get("feature_path") or "").strip()
         if not path:
             unknown_paths.append("<missing path>")
@@ -276,11 +277,13 @@ class PTDVMusicAdapter(FormatAdapter):
             namespace="music",
             name="extract_note_events",
             description="Extract PTDV note events from execution samples.",
-            input_schema=object_schema({"samples": array_schema()}, required=["samples"]),
+            input_schema=object_schema({"samples": array_schema(), "execution": object_schema()}),
         )
         def _extract(params: Dict[str, Any]) -> Dict[str, Any]:
-            events, unknown_paths, usable_groups, diagnostics = collect_note_events_with_diagnostics(list(params["samples"]))
-            return {"events": events, "unknown_paths": unknown_paths, "usable_groups": usable_groups, "diagnostics": diagnostics}
+            source = params["execution"] if "execution" in params else params.get("samples")
+            events, unknown_paths, usable_groups, diagnostics = collect_note_events_with_diagnostics(execution_particles(source) if isinstance(source, dict) else source)
+            provenance = {key: source[key] for key in ("block_number", "block_hash", "runner")} if isinstance(source, dict) else None
+            return {"events": events, "unknown_paths": unknown_paths, "usable_groups": usable_groups, "diagnostics": diagnostics, "provenance": provenance}
 
         @registry.tool(
             namespace="music",

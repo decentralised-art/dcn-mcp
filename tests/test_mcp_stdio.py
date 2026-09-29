@@ -38,6 +38,18 @@ class MCPStdioTests(unittest.TestCase):
                     tool_names_page_2 = {tool.name for tool in tools_page_2.tools}
                     self.assertTrue(tool_names_page_2)
                     self.assertNotEqual(tool_names_page_1, tool_names_page_2)
+                    all_tool_names = tool_names_page_1 | tool_names_page_2
+                    next_cursor = tools_page_2.nextCursor
+                    while next_cursor:
+                        page = await session.list_tools(params=types.PaginatedRequestParams(cursor=next_cursor))
+                        all_tool_names.update(tool.name for tool in page.tools)
+                        next_cursor = page.nextCursor
+                    for name in (
+                        "create_connector", "create_transformation", "create_condition",
+                        "simulate_connector", "prepare_publication", "publish_entity",
+                        "confirm_publication", "execute_connector",
+                    ):
+                        self.assertIn(f"core.{name}", all_tool_names)
 
                     resources_page_1 = await session.list_resources()
                     resource_uris_page_1 = {str(resource.uri) for resource in resources_page_1.resources}

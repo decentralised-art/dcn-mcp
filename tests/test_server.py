@@ -15,6 +15,12 @@ class ServerTests(unittest.TestCase):
         self.assertIn("core.get_feed_page", tool_names)
         self.assertIn("core.get_feed_stream_replay", tool_names)
         self.assertIn("core.get_nonce", tool_names)
+        for name in (
+            "create_connector", "create_transformation", "create_condition",
+            "simulate_connector", "prepare_publication", "publish_entity",
+            "confirm_publication", "execute_connector",
+        ):
+            self.assertIn(f"core.{name}", tool_names)
         self.assertIn("inspect.summarize_execution", tool_names)
         self.assertIn("music.extract_note_events", tool_names)
         self.assertNotIn("music.build_parent_connector", tool_names)

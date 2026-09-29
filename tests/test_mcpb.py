@@ -32,5 +32,12 @@ class McpbTests(TestCase):
                 self.assertIn("pyproject.toml", names)
                 self.assertIn("README.md", names)
                 self.assertIn("src/dcn_mcp/server.py", names)
+                self.assertIn("src/dcn_mcp/lifecycle.py", names)
+                primer_path = "src/dcn_mcp/resources/core/dcn_core_primer.md"
+                self.assertIn(primer_path, names)
+                self.assertIn("core.simulate_connector", archive.read(primer_path).decode("utf-8"))
                 manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
                 self.assertEqual(manifest["name"], "dcn-mcp")
+                tool_names = {tool["name"] for tool in manifest["tools"]}
+                self.assertIn("core.publish_entity", tool_names)
+                self.assertIn("core.confirm_publication", tool_names)

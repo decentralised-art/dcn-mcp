@@ -32,9 +32,13 @@ When `dcn-mcp` is running, an MCP host can use tools such as:
 - `core.get_format`
 - `core.get_account`
 - `core.get_nonce`
-- `core.deploy_connector`
-- `core.deploy_transformation`
-- `core.deploy_condition`
+- `core.create_connector`
+- `core.create_transformation`
+- `core.create_condition`
+- `core.simulate_connector`
+- `core.prepare_publication`
+- `core.publish_entity`
+- `core.confirm_publication`
 - `core.execute_connector`
 - `core.ensure_preflight`
 - `core.build_parent_connector`
@@ -51,6 +55,33 @@ It also exposes MCP resources such as:
 - `music.ptdv_music_workflow`
 - `music.register_maps`
 - `music.score_position_schema_workflow`
+
+## Drafts, publication and execution
+
+`core.create_*` creates local drafts. `core.simulate_connector` previews them
+without gas. Deprecated `core.deploy_*` names remain draft-only aliases.
+`core.execute_connector` requires published entities and returns
+`{block_number, block_hash, runner, particles}` plus a compatibility `samples`
+alias. Pass the full result as `execution` to music/inspection tools to retain
+provenance. Transformation and condition detail responses use `args_count`;
+Solidity source is no longer part of runtime details.
+
+Publication is explicit and owner-paid. First inspect `core.prepare_publication`,
+then call `core.publish_entity` with `kind`, `name`, `max_fee_per_gas`,
+`max_total_fee` (both limits in wei; total means gas limit times max fee), and a
+unique `record_path` inside `DCN_ARTIFACT_ROOT`. `chain_id` defaults to Sepolia
+(`11155111`). Dependencies must be published before their parents. No chain RPC
+URL is required: the account signs locally and the server relays one transaction.
+Publish serially for each owner and resolve pending transactions before preparing
+the next entity: the registry publication nonce is shared by that owner. Separate
+MCP sessions are not a safe way to parallelize one owner's publications.
+
+The publication record is persisted before broadcast. On timeout or lost response,
+reuse the same record to confirm the transaction; do not create another record to
+retry sending. `core.confirm_publication` also checks an existing transaction by
+name, content hash and transaction hash. `mined` is not finalized/indexed: a newly
+mined connector may remain unavailable to chain execution until the safe block
+advances. Retry execution without republishing or substituting simulation output.
 
 ## Quick Start
 
@@ -376,7 +407,9 @@ These are the main runtime settings:
   - default: `https://api.decentralised.art/chain`
 - `PRIVATE_KEY`
   - optional for read-only inspection
-  - required for authenticated operations such as deploy/execute on protected endpoints
+  - required for authenticated draft creation, simulation, publication and chain execution
+  - signs the chain API nonce flow (`GET /chain/nonce/{address}` then `POST /chain/auth`)
+  - this chain token is separate from the app/services SIWE session used by `hypermusic-backend`
 - `DCN_TIMEOUT`
   - request timeout in seconds
 - `DCN_ARTIFACT_ROOT`

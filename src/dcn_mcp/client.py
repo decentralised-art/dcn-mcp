@@ -7,10 +7,11 @@ from urllib.parse import quote
 import requests
 from eth_account.messages import encode_defunct
 
+from .lifecycle import LifecycleClientMixin, execution_particles
 from .models import ChainCursor, TransformationPair
 
 
-class DCNClient:
+class DCNClient(LifecycleClientMixin):
     def __init__(self, base_url: str, timeout: float = 15.0):
         self.base_url = base_url.rstrip("/")
         self.timeout = float(timeout)
@@ -154,22 +155,26 @@ class DCNClient:
     def post_condition(self, payload: Dict[str, Any], acct) -> Dict[str, Any]:
         return self._handle_response(self._post_with_reauth("/condition", payload, acct))
 
-    def execute_connector(
-        self,
-        acct,
-        connector_name: str,
-        particles_count: int,
-        dynamic_ri: Optional[Dict[str, Dict[str, int]]] = None,
-    ) -> List[Dict[str, Any]]:
-        payload = {
-            "connector_name": connector_name,
-            "particles_count": int(particles_count),
-            "dynamic_ri": dynamic_ri or {},
-        }
-        data = self._handle_response(self._post_with_reauth("/execute", payload, acct))
-        if not isinstance(data, list):
-            raise RuntimeError(f"Unexpected /execute response shape: {type(data).__name__}")
+    def _run_connector(self, path, acct, connector_name, particles_count, dynamic_ri):
+        payload = {"connector_name": connector_name, "particles_count": int(particles_count),
+                   "dynamic_ri": dynamic_ri or {}}
+        data = self._handle_response(self._post_with_reauth(path, payload, acct))
+        if path == "/execute" and not isinstance(data, dict):
+            raise ValueError("/execute requires a block-anchored execution envelope")
+        if path == "/simulate" and not isinstance(data, list):
+            raise ValueError("/simulate requires a particle array")
+        execution_particles(data)
         return data
+
+    def execute_connector(self, acct, connector_name: str, particles_count: int,
+                          dynamic_ri=None) -> Dict[str, Any]:
+        """Read the published connector on chain, preserving block provenance."""
+        return self._run_connector("/execute", acct, connector_name, particles_count, dynamic_ri)
+
+    def simulate_connector(self, acct, connector_name: str, particles_count: int,
+                           dynamic_ri=None) -> List[Dict[str, Any]]:
+        """Preview a local draft in the server simulation EVM; no publication."""
+        return self._run_connector("/simulate", acct, connector_name, particles_count, dynamic_ri)
 
     def list_formats(self, limit: int = 100, after: Optional[str] = None) -> Dict[str, Any]:
         params: Dict[str, Any] = {"limit": int(limit)}

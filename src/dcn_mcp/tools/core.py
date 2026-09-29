@@ -5,6 +5,8 @@ from typing import Any, Dict, Iterable, List, Sequence, Tuple
 from ..config import DEFAULT_PREFERRED_TRANSFORMATION_PAIRS, MAX_TIMEOUT_SECONDS, MIN_TIMEOUT_SECONDS
 from ..context import context_from_params
 from ..errors import ValidationError
+from ..artifacts import resolve_artifact_path
+from ..lifecycle import confirm_existing, publish_recorded
 from ..schemas import array_schema, boolean_schema, integer_schema, number_schema, object_schema, string_schema
 
 MAX_PAGE_LIMIT = 256
@@ -228,7 +230,7 @@ def register(registry) -> None:
     @registry.tool(
         namespace="core",
         name="deploy_connector",
-        description="Deploy a connector payload to the DCN.",
+        description="Deprecated alias of create_connector: creates a server-local draft; never publishes or spends gas.",
         input_schema=object_schema({"payload": object_schema(), "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["payload"]),
     )
     def _deploy_connector(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -238,7 +240,7 @@ def register(registry) -> None:
     @registry.tool(
         namespace="core",
         name="deploy_transformation",
-        description="Deploy a transformation payload to the DCN.",
+        description="Deprecated alias of create_transformation: creates a server-local draft; never publishes or spends gas.",
         input_schema=object_schema({"payload": object_schema(), "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["payload"]),
     )
     def _deploy_transformation(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -248,17 +250,68 @@ def register(registry) -> None:
     @registry.tool(
         namespace="core",
         name="deploy_condition",
-        description="Deploy a condition payload to the DCN.",
+        description="Deprecated alias of create_condition: creates a server-local draft; never publishes or spends gas.",
         input_schema=object_schema({"payload": object_schema(), "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["payload"]),
     )
     def _deploy_condition(params: Dict[str, Any]) -> Dict[str, Any]:
         with context_from_params(params) as ctx:
             return ctx.client().post_condition(dict(params["payload"]), ctx.account())
 
+    for kind, handler in (("connector", _deploy_connector), ("transformation", _deploy_transformation), ("condition", _deploy_condition)):
+        registry.tool(
+            namespace="core", name=f"create_{kind}",
+            description=f"Create a server-local {kind} draft. Does not publish or spend gas.",
+            input_schema=object_schema({"payload": object_schema(), "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["payload"]),
+        )(handler)
+
+    @registry.tool(
+        namespace="core", name="simulate_connector",
+        description="Simulate a connector draft locally on the server; returns particles without chain provenance or publication.",
+        input_schema=object_schema({"connector_name": string_schema(min_length=1), "particles_count": PARTICLES_COUNT_SCHEMA,
+            "dynamic_ri": object_schema(), "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA},
+            required=["connector_name", "particles_count"]),
+    )
+    def _simulate(params):
+        with context_from_params(params) as ctx:
+            particles = ctx.client().simulate_connector(ctx.account(), str(params["connector_name"]), int(params["particles_count"]), dict(params.get("dynamic_ri") or {}))
+            return {"particles": particles, "samples": particles, "execution_mode": "simulation"}
+
+    publication_schema = {"kind": string_schema(min_length=1), "name": string_schema(min_length=1),
+        "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}
+
+    @registry.tool(namespace="core", name="prepare_publication",
+        description="Prepare a draft for owner-paid chain publication and inspect relay transaction/fee fields. Does not sign or send.",
+        input_schema=object_schema(publication_schema, required=["kind", "name"]))
+    def _prepare_publication(params):
+        with context_from_params(params) as ctx:
+            return ctx.client().publish_prepare(ctx.account(), params["kind"], params["name"])
+
+    @registry.tool(namespace="core", name="publish_entity",
+        description="Explicitly spend owner gas to publish a draft (dependencies must already be published). Publish serially per owner and resolve pending receipts first. Signs locally, relays once, and confirms. Requires fee limits and a persistent record path within the artifact root. Reusing the same record confirms without rebroadcasting.",
+        input_schema=object_schema({**publication_schema,
+            "record_path": string_schema(min_length=1), "chain_id": integer_schema(minimum=1),
+            "max_fee_per_gas": integer_schema(minimum=1), "max_total_fee": integer_schema(minimum=1),
+            "max_confirm_attempts": integer_schema(minimum=1, maximum=200)},
+            required=["kind", "name", "record_path", "max_fee_per_gas", "max_total_fee"]))
+    def _publish(params):
+        with context_from_params(params) as ctx:
+            return publish_recorded(ctx.client(), ctx.account(), params["kind"], params["name"],
+                resolve_artifact_path(params["record_path"]), chain_id=params.get("chain_id", 11155111),
+                max_fee_per_gas=params["max_fee_per_gas"], max_total_fee=params["max_total_fee"],
+                max_confirm_attempts=params.get("max_confirm_attempts", 20))
+
+    @registry.tool(namespace="core", name="confirm_publication",
+        description="Check the receipt of an existing publication transaction; does not sign or send another transaction.",
+        input_schema=object_schema({**publication_schema, "content_hash": string_schema(min_length=1), "tx_hash": string_schema(min_length=1)},
+            required=["kind", "name", "content_hash", "tx_hash"]))
+    def _confirm_publication(params):
+        with context_from_params(params) as ctx:
+            return confirm_existing(ctx.client(), ctx.account(), params["kind"], params["name"], params["content_hash"], params["tx_hash"])
+
     @registry.tool(
         namespace="core",
         name="execute_connector",
-        description="Execute a connector and return raw samples.",
+        description="Execute a published connector on chain and return particles with block_number, block_hash and runner provenance; samples is a compatibility alias.",
         input_schema=object_schema(
             {
                 "connector_name": string_schema(min_length=1),
@@ -280,7 +333,7 @@ def register(registry) -> None:
                 particles_count=int(params["particles_count"]),
                 dynamic_ri=dict(dynamic_ri),
             )
-            return {"samples": samples}
+            return {**samples, "samples": samples["particles"], "execution_mode": "chain"}
 
     @registry.tool(
         namespace="core",

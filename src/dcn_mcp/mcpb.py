@@ -21,17 +21,14 @@ def _repo_path(relative_path: str) -> Path:
 
 
 def build_manifest() -> dict:
-    tools, _, _ = build_registries()
+    tools, _ = build_registries()
     return {
         "manifest_version": MANIFEST_VERSION,
         "name": BUNDLE_NAME,
         "display_name": "DCN MCP",
         "version": __version__,
         "description": "General MCP server for the Decentralized Creative Network (DCN).",
-        "long_description": (
-            "Format-agnostic DCN operations, generic execution inspection, and a PTDV/music "
-            "adapter bundled as a Claude Desktop MCP extension."
-        ),
+        "long_description": "Core DCN operations for local drafts, simulation, network publication, onchain execution, and discovery.",
         "author": {
             "name": "dcn-mcp maintainers",
         },
@@ -67,8 +64,6 @@ def build_manifest() -> dict:
             "mcp",
             "creative-network",
             "format-agnostic",
-            "ptdv",
-            "music",
         ],
         "compatibility": {
             "claude_desktop": ">=1.0.0",
@@ -105,7 +100,7 @@ def build_manifest() -> dict:
             "artifact_root": {
                 "type": "string",
                 "title": "Artifact Root",
-                "description": "Directory where artifact-writing tools are allowed to create files.",
+                "description": "Directory for persistent publication transaction records.",
                 "default": "dcn-mcp-artifacts",
                 "required": True,
             },

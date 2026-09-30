@@ -13,19 +13,16 @@ from mcp.server.lowlevel.server import ReadResourceContents
 from mcp.server.models import InitializationOptions
 
 from . import __version__
-from .adapters import PTDVMusicAdapter
-from .adapters.registry import AdapterRegistry
 from .pagination import DEFAULT_RESOURCES_PAGE_SIZE, DEFAULT_TOOLS_PAGE_SIZE, paginate
 from .registry import ToolRegistry
 from .resources import ResourceRegistry
-from .tools import artifacts, core, inspect
+from .tools import core
 
 
 SERVER_NAME = "dcn-mcp"
 SERVER_INSTRUCTIONS = (
-    "General DCN MCP server with a format-agnostic core and adapter-based specialist tools. "
-    "Use core tools for protocol-level DCN operations, inspect tools for generic execution analysis, "
-    "and specialist namespaces such as music.* only when the format semantics justify them."
+    "DCN MCP server exposing core protocol operations for local drafts, simulation, "
+    "publication, onchain execution, and discovery."
 )
 TOOL_OUTPUT_SCHEMA = {
     "type": "object",
@@ -39,14 +36,11 @@ TOOL_OUTPUT_SCHEMA = {
 }
 
 
-def build_registries() -> Tuple[ToolRegistry, AdapterRegistry, ResourceRegistry]:
+def build_registries() -> Tuple[ToolRegistry, ResourceRegistry]:
     tools = ToolRegistry()
-    adapters = AdapterRegistry()
     resources = ResourceRegistry()
 
     core.register(tools)
-    inspect.register(tools)
-    artifacts.register(tools)
 
     base = pathlib.Path(__file__).resolve().parent / "resources" / "core"
     resources.register_markdown(
@@ -55,11 +49,7 @@ def build_registries() -> Tuple[ToolRegistry, AdapterRegistry, ResourceRegistry]
         path=base / "dcn_core_primer.md",
     )
 
-    ptdv = PTDVMusicAdapter()
-    adapters.register(ptdv)
-    ptdv.register_tools(tools)
-    ptdv.register_resources(resources)
-    return tools, adapters, resources
+    return tools, resources
 
 
 def build_mcp_server(tools: ToolRegistry, resources: ResourceRegistry) -> Server:
@@ -114,7 +104,7 @@ def build_mcp_server(tools: ToolRegistry, resources: ResourceRegistry) -> Server
 
 
 async def run_stdio_server() -> None:
-    tools, _, resources = build_registries()
+    tools, resources = build_registries()
     server = build_mcp_server(tools, resources)
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
         await server.run(
@@ -133,12 +123,11 @@ async def run_stdio_server() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="dcn-mcp MCP server and inspection CLI")
+    parser = argparse.ArgumentParser(description="dcn-mcp core MCP server and CLI")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("stdio")
     sub.add_parser("list-tools")
-    sub.add_parser("list-adapters")
     sub.add_parser("list-resources")
 
     read_resource = sub.add_parser("read-resource")
@@ -149,16 +138,13 @@ def main() -> None:
     invoke.add_argument("payload", help="JSON payload string")
 
     args = parser.parse_args()
-    registry, adapters, resources = build_registries()
+    registry, resources = build_registries()
 
     if args.cmd == "stdio":
         asyncio.run(run_stdio_server())
         return
     if args.cmd == "list-tools":
         print(json.dumps(registry.describe_tools(), ensure_ascii=False, indent=2))
-        return
-    if args.cmd == "list-adapters":
-        print(json.dumps(adapters.describe(), ensure_ascii=False, indent=2))
         return
     if args.cmd == "list-resources":
         print(json.dumps(resources.describe_resources(), ensure_ascii=False, indent=2))

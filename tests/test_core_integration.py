@@ -100,7 +100,7 @@ def fake_account_loader(_private_key):
 class CoreIntegrationTests(unittest.TestCase):
     def setUp(self):
         set_runtime_overrides(client_factory=lambda api_base, timeout: FakeClient(api_base, timeout), account_loader=fake_account_loader)
-        self.registry, _, _ = build_registries()
+        self.registry, _ = build_registries()
 
     def tearDown(self):
         clear_runtime_overrides()
@@ -176,10 +176,6 @@ class CoreIntegrationTests(unittest.TestCase):
         self.assertNotIn("block_hash", result["data"])
         self.assertNotIn("samples", result["data"])
         client.publish.assert_not_called()
-        for name in ("inspect.group_execution_tree", "inspect.summarize_execution", "music.extract_note_events"):
-            inspected = self.registry.invoke(name, {"samples": result["data"]["particles"]})
-            self.assertTrue(inspected["ok"], inspected)
-            self.assertIsNone(inspected["data"]["provenance"])
 
     def test_execute_not_yet_at_safe_block_never_substitutes_simulation(self):
         import requests
@@ -194,13 +190,6 @@ class CoreIntegrationTests(unittest.TestCase):
             self.assertFalse(result["ok"])
             self.assertNotIn("data", result)
             client.simulate_connector.assert_not_called()
-
-    def test_inspection_and_music_keep_envelope_provenance(self):
-        execution = FakeClient("https://example.invalid", 1).execute_connector("piece", 8)
-        for name in ("inspect.group_execution_tree", "inspect.summarize_execution", "music.extract_note_events"):
-            result = self.registry.invoke(name, {"execution": execution})
-            self.assertTrue(result["ok"], result)
-            self.assertEqual(result["data"]["provenance"]["block_hash"], execution["block_hash"])
 
     def test_create_transformation_and_condition_use_fake_client_and_account(self):
         transformation = self.registry.invoke("core.create_transformation", {"payload": {"name": "xform"}})

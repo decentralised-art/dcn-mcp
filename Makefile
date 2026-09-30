@@ -6,7 +6,7 @@ STAMP := $(VENV_DIR)/.bootstrap-complete
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install smoke test stdio mcpb list-tools list-resources list-adapters read-core-primer invoke-example
+.PHONY: help install smoke test stdio mcpb list-tools list-resources read-core-primer invoke-example
 
 help:
 	@echo "dcn-mcp targets:"
@@ -17,7 +17,6 @@ help:
 	@echo "  make mcpb           Build a Claude Desktop .mcpb bundle in dist/"
 	@echo "  make list-tools     List local tool metadata"
 	@echo "  make list-resources List local resource metadata"
-	@echo "  make list-adapters  List registered adapters"
 	@echo "  make read-core-primer Read the core primer resource"
 	@echo "  make invoke-example Run a sample local tool invocation"
 
@@ -45,9 +44,6 @@ list-tools: $(STAMP)
 
 list-resources: $(STAMP)
 	"$(VENV_PYTHON)" -m dcn_mcp.server list-resources
-
-list-adapters: $(STAMP)
-	"$(VENV_PYTHON)" -m dcn_mcp.server list-adapters
 
 read-core-primer: $(STAMP)
 	"$(VENV_PYTHON)" -m dcn_mcp.server read-resource core.dcn_core_primer

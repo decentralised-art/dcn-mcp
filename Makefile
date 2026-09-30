@@ -9,7 +9,7 @@ STAMP := $(VENV_DIR)/.bootstrap-complete
 .PHONY: help install smoke test stdio mcpb list-tools list-resources read-core-primer invoke-example
 
 help:
-	@echo "dcn-mcp targets:"
+	@echo "decentralised.art MCP targets:"
 	@echo "  make install        Create/update the local .venv and install dcn-mcp"
 	@echo "  make smoke          Run the repo smoke test"
 	@echo "  make test           Run the full test suite"

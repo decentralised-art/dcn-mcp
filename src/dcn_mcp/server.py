@@ -21,7 +21,7 @@ from .tools import core
 
 SERVER_NAME = "dcn-mcp"
 SERVER_INSTRUCTIONS = (
-    "DCN MCP server exposing core protocol operations for local drafts, simulation, "
+    "decentralised.art MCP server exposing core protocol operations for local drafts, simulation, "
     "publication, onchain execution, and discovery."
 )
 TOOL_OUTPUT_SCHEMA = {
@@ -45,7 +45,7 @@ def build_registries() -> Tuple[ToolRegistry, ResourceRegistry]:
     base = pathlib.Path(__file__).resolve().parent / "resources" / "core"
     resources.register_markdown(
         name="core.dcn_core_primer",
-        description="Format-agnostic DCN primer covering connectors, dimensions, RI, and execution trees.",
+        description="Format-agnostic decentralised.art primer covering connectors, dimensions, RI, and execution trees.",
         path=base / "dcn_core_primer.md",
     )
 
@@ -123,7 +123,7 @@ async def run_stdio_server() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="dcn-mcp core MCP server and CLI")
+    parser = argparse.ArgumentParser(description="decentralised.art core MCP server and CLI")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("stdio")

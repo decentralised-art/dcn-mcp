@@ -1,6 +1,6 @@
-# dcn-mcp
+# mcp
 
-`dcn-mcp` is the core MCP server for the Decentralized Creative Network (DCN).
+This repository provides the `dcn-mcp` server and CLI for decentralised.art.
 It exposes format-agnostic protocol operations under the `core.*` namespace.
 
 If you are a user of this repo, the important question is simple:
@@ -12,7 +12,7 @@ If you are a user of this repo, the important question is simple:
 
 ## What users get
 
-When `dcn-mcp` is running, an MCP host can use tools such as:
+When the MCP server is running, an MCP host can use tools such as:
 
 - `core.connector_exists`
 - `core.get_connector`
@@ -43,9 +43,9 @@ It also exposes the MCP resource:
 
 ## Drafts, publication and execution
 
-The chain client uses contracts generated from the pinned
-`submodules/dcn-api-spec` OpenAPI source (currently the same `c628d96` commit
-used by `dcn-sdk`). Endpoint paths, authentication requirements, query and
+The chain client uses contracts generated from the pinned `api-spec` OpenAPI
+source at `submodules/api-spec` (currently the same `c628d96` commit used
+by `sdk`). Endpoint paths, authentication requirements, query and
 create/publication request shapes, and execution/publication responses are
 checked against those contracts. MCP tool schemas describe MCP inputs, not HTTP
 requests. To update the API contract, update the submodule, run
@@ -85,7 +85,7 @@ advances. Retry execution without republishing or substituting simulation output
 Preferred onboarding flow:
 
 ```bash
-cd /path/to/dcn-mcp
+cd /path/to/mcp
 make install
 make smoke
 make stdio
@@ -114,8 +114,8 @@ source .venv/bin/activate
 If someone cloned the repo and wants the shortest path:
 
 ```bash
-git clone <repo-url>
-cd dcn-mcp
+git clone https://github.com/decentralised-art/mcp.git
+cd mcp
 make install
 make smoke
 make stdio
@@ -123,12 +123,12 @@ make stdio
 
 ## Install In Codex
 
-If your goal is to make `dcn-mcp` available to Codex, do this:
+If your goal is to make this MCP server available to Codex, do this:
 
 1. Install the repo-local environment:
 
 ```bash
-cd /path/to/dcn-mcp
+cd /path/to/mcp
 make install
 make smoke
 ```
@@ -137,20 +137,20 @@ make smoke
 
 ```toml
 [mcp_servers.dcn]
-command = "/path/to/dcn-mcp/.venv/bin/python"
+command = "/path/to/mcp/.venv/bin/python"
 args = ["-m", "dcn_mcp.server", "stdio"]
 
 [mcp_servers.dcn.env]
-PYTHONPATH = "/path/to/dcn-mcp/src"
+PYTHONPATH = "/path/to/mcp/src"
 API_BASE = "https://api.decentralised.art/chain"
 PRIVATE_KEY = "<optional>"
 DCN_TIMEOUT = "15"
-DCN_ARTIFACT_ROOT = "/path/to/dcn-mcp/dcn-mcp-artifacts"
+DCN_ARTIFACT_ROOT = "/path/to/mcp/dcn-mcp-artifacts"
 ```
 
 Notes:
-- replace `/path/to/dcn-mcp` with the real absolute path where you cloned this repo
-- if you want live authenticated DCN actions, set `PRIVATE_KEY`
+- replace `/path/to/mcp` with the real absolute path where you cloned this repo
+- if you want authenticated decentralised.art actions, set `PRIVATE_KEY`
 - reads, simulation, and onchain execution work without `PRIVATE_KEY`
 
 3. Restart Codex or start a fresh Codex session.
@@ -163,8 +163,8 @@ codex mcp list
 
 5. In the new session, ask Codex to use it explicitly. For example:
 
-- `Use the DCN MCP to list formats`
-- `Use the DCN MCP to read core.dcn_core_primer`
+- `Use the decentralised.art MCP to list formats`
+- `Use the decentralised.art MCP to read core.dcn_core_primer`
 
 Important:
 - a newly registered MCP server usually will not appear inside an already-running session
@@ -172,12 +172,12 @@ Important:
 
 ## MCP Host Configuration
 
-The safest way to register `dcn-mcp` in any MCP host is to point the host at the project-local venv Python.
+The safest way to register this MCP server in any MCP host is to point the host at the project-local venv Python.
 
 Command:
 
 ```bash
-/path/to/dcn-mcp/.venv/bin/python
+/path/to/mcp/.venv/bin/python
 ```
 
 Args:
@@ -189,17 +189,17 @@ Args:
 Working directory:
 
 ```bash
-/path/to/dcn-mcp
+/path/to/mcp
 ```
 
 Environment:
 
 ```bash
-PYTHONPATH=/path/to/dcn-mcp/src
+PYTHONPATH=/path/to/mcp/src
 API_BASE=https://api.decentralised.art/chain
-PRIVATE_KEY=<your-private-key-if-you-want-authenticated-live-DCN-actions>
+PRIVATE_KEY=<your-private-key-if-you-want-authenticated-decentralised.art-actions>
 DCN_TIMEOUT=15
-DCN_ARTIFACT_ROOT=/path/to/dcn-mcp/dcn-mcp-artifacts
+DCN_ARTIFACT_ROOT=/path/to/mcp/dcn-mcp-artifacts
 ```
 
 ## Example MCP Config Snippet
@@ -208,16 +208,16 @@ Use this as a generic starting point for an MCP-capable host that accepts JSON s
 
 ```json
 {
-  "dcn-mcp": {
-    "command": "/path/to/dcn-mcp/.venv/bin/python",
+  "dcn": {
+    "command": "/path/to/mcp/.venv/bin/python",
     "args": ["-m", "dcn_mcp.server", "stdio"],
-    "cwd": "/path/to/dcn-mcp",
+    "cwd": "/path/to/mcp",
     "env": {
-      "PYTHONPATH": "/path/to/dcn-mcp/src",
+      "PYTHONPATH": "/path/to/mcp/src",
       "API_BASE": "https://api.decentralised.art/chain",
       "PRIVATE_KEY": "<optional>",
       "DCN_TIMEOUT": "15",
-      "DCN_ARTIFACT_ROOT": "/path/to/dcn-mcp/dcn-mcp-artifacts"
+      "DCN_ARTIFACT_ROOT": "/path/to/mcp/dcn-mcp-artifacts"
     }
   }
 }
@@ -237,44 +237,44 @@ These are the concrete MCP clients I expect most people to use first:
 - Claude Code
 - MCP Inspector
 
-Replace `/path/to/dcn-mcp` below with the directory where you cloned this repo.
+Replace `/path/to/mcp` below with the directory where you cloned this repo.
 
 ### Codex CLI / Codex app
 
-OpenAI documents Codex MCP configuration in `~/.codex/config.toml`. For `dcn-mcp`, add:
+OpenAI documents Codex MCP configuration in `~/.codex/config.toml`. For this server, add:
 
 ```toml
 [mcp_servers.dcn]
-command = "/path/to/dcn-mcp/.venv/bin/python"
+command = "/path/to/mcp/.venv/bin/python"
 args = ["-m", "dcn_mcp.server", "stdio"]
 
 [mcp_servers.dcn.env]
-PYTHONPATH = "/path/to/dcn-mcp/src"
+PYTHONPATH = "/path/to/mcp/src"
 API_BASE = "https://api.decentralised.art/chain"
 PRIVATE_KEY = "<optional>"
 DCN_TIMEOUT = "15"
-DCN_ARTIFACT_ROOT = "/path/to/dcn-mcp/dcn-mcp-artifacts"
+DCN_ARTIFACT_ROOT = "/path/to/mcp/dcn-mcp-artifacts"
 ```
 
 Codex CLI and the Codex app share this configuration.
 
 ### VS Code MCP config
 
-VS Code reads either workspace `.vscode/mcp.json` or user-profile MCP configuration. A workspace config for `dcn-mcp` looks like:
+VS Code reads either workspace `.vscode/mcp.json` or user-profile MCP configuration. A workspace config for this server looks like:
 
 ```json
 {
   "servers": {
     "dcn": {
       "type": "stdio",
-      "command": "/path/to/dcn-mcp/.venv/bin/python",
+      "command": "/path/to/mcp/.venv/bin/python",
       "args": ["-m", "dcn_mcp.server", "stdio"],
       "env": {
-        "PYTHONPATH": "/path/to/dcn-mcp/src",
+        "PYTHONPATH": "/path/to/mcp/src",
         "API_BASE": "https://api.decentralised.art/chain",
         "PRIVATE_KEY": "<optional>",
         "DCN_TIMEOUT": "15",
-        "DCN_ARTIFACT_ROOT": "/path/to/dcn-mcp/dcn-mcp-artifacts"
+        "DCN_ARTIFACT_ROOT": "/path/to/mcp/dcn-mcp-artifacts"
       }
     }
   }
@@ -290,14 +290,14 @@ Cursor supports project `.cursor/mcp.json` and global `~/.cursor/mcp.json`. For 
   "mcpServers": {
     "dcn": {
       "type": "stdio",
-      "command": "/path/to/dcn-mcp/.venv/bin/python",
+      "command": "/path/to/mcp/.venv/bin/python",
       "args": ["-m", "dcn_mcp.server", "stdio"],
       "env": {
-        "PYTHONPATH": "/path/to/dcn-mcp/src",
+        "PYTHONPATH": "/path/to/mcp/src",
         "API_BASE": "https://api.decentralised.art/chain",
         "PRIVATE_KEY": "<optional>",
         "DCN_TIMEOUT": "15",
-        "DCN_ARTIFACT_ROOT": "/path/to/dcn-mcp/dcn-mcp-artifacts"
+        "DCN_ARTIFACT_ROOT": "/path/to/mcp/dcn-mcp-artifacts"
       }
     }
   }
@@ -312,14 +312,14 @@ Claude Code supports project-scoped `.mcp.json` files and a `claude mcp add` wor
 {
   "mcpServers": {
     "dcn": {
-      "command": "/path/to/dcn-mcp/.venv/bin/python",
+      "command": "/path/to/mcp/.venv/bin/python",
       "args": ["-m", "dcn_mcp.server", "stdio"],
       "env": {
-        "PYTHONPATH": "/path/to/dcn-mcp/src",
+        "PYTHONPATH": "/path/to/mcp/src",
         "API_BASE": "https://api.decentralised.art/chain",
         "PRIVATE_KEY": "<optional>",
         "DCN_TIMEOUT": "15",
-        "DCN_ARTIFACT_ROOT": "/path/to/dcn-mcp/dcn-mcp-artifacts"
+        "DCN_ARTIFACT_ROOT": "/path/to/mcp/dcn-mcp-artifacts"
       }
     }
   }
@@ -330,11 +330,11 @@ CLI alternative:
 
 ```bash
 claude mcp add --transport stdio --scope project \
-  --env PYTHONPATH=/path/to/dcn-mcp/src \
+  --env PYTHONPATH=/path/to/mcp/src \
   --env API_BASE=https://api.decentralised.art/chain \
   --env DCN_TIMEOUT=15 \
-  --env DCN_ARTIFACT_ROOT=/path/to/dcn-mcp/dcn-mcp-artifacts \
-  dcn -- /path/to/dcn-mcp/.venv/bin/python -m dcn_mcp.server stdio
+  --env DCN_ARTIFACT_ROOT=/path/to/mcp/dcn-mcp-artifacts \
+  dcn -- /path/to/mcp/.venv/bin/python -m dcn_mcp.server stdio
 ```
 
 ### Claude Desktop
@@ -344,7 +344,7 @@ Claude Desktop now supports local MCP extensions as MCP Bundles (`.mcpb`). This 
 Build the bundle:
 
 ```bash
-cd /path/to/dcn-mcp
+cd /path/to/mcp
 make install
 make mcpb
 ```
@@ -380,19 +380,19 @@ The official MCP Inspector docs show launching a local Python server through a c
 
 ```bash
 npx @modelcontextprotocol/inspector \
-  /path/to/dcn-mcp/.venv/bin/python \
+  /path/to/mcp/.venv/bin/python \
   -m dcn_mcp.server stdio
 ```
 
 If you want the server to inherit the repo-local environment cleanly, run it with:
 
 ```bash
-PYTHONPATH=/path/to/dcn-mcp/src \
+PYTHONPATH=/path/to/mcp/src \
 API_BASE=https://api.decentralised.art/chain \
 DCN_TIMEOUT=15 \
-DCN_ARTIFACT_ROOT=/path/to/dcn-mcp/dcn-mcp-artifacts \
+DCN_ARTIFACT_ROOT=/path/to/mcp/dcn-mcp-artifacts \
 npx @modelcontextprotocol/inspector \
-  /path/to/dcn-mcp/.venv/bin/python \
+  /path/to/mcp/.venv/bin/python \
   -m dcn_mcp.server stdio
 ```
 
@@ -406,7 +406,7 @@ These are the main runtime settings:
   - optional for reads, simulation, and chain execution
   - required for authenticated draft creation and publication
   - signs the chain API nonce flow (`GET /chain/nonce/{address}` then `POST /chain/auth`)
-  - this chain token is separate from the app/services SIWE session used by `hypermusic-backend`
+- this chain token is separate from the app/services SIWE session used by `services-backend`
 - `DCN_TIMEOUT`
   - request timeout in seconds
 - `DCN_ARTIFACT_ROOT`
@@ -420,7 +420,7 @@ There are three levels of verification.
 ### A. Unit and transport tests
 
 ```bash
-cd /path/to/dcn-mcp
+cd /path/to/mcp
 source .venv/bin/activate
 python -m unittest discover -s tests -v
 ```
@@ -435,7 +435,7 @@ Important test coverage includes:
 ### B. Local CLI inspection
 
 ```bash
-cd /path/to/dcn-mcp
+cd /path/to/mcp
 source .venv/bin/activate
 python -m dcn_mcp.server list-tools
 python -m dcn_mcp.server list-resources
@@ -557,8 +557,8 @@ or
 
 ## Architecture
 
-The HTTP client implements the DCN protocol using contracts generated from
-`dcn-api-spec`. The MCP server exposes those operations as `core.*` tools and a
+The HTTP client implements the decentralised.art protocol using contracts
+generated from `api-spec`. The MCP server exposes those operations as `core.*` tools and a
 core primer resource. Format-specific interpretation and general file-writing
 belong in separate plugins.
 
@@ -578,6 +578,6 @@ Pagination is implemented with opaque numeric cursors managed by the server.
 
 ## Notes For Maintainers
 
-- Use the project-local `.venv` for `dcn-mcp` work.
+- Use the project-local `.venv` for work on this repository.
 - Do not rely on the shared interpreter for long-term use.
 - The current server uses the official MCP Python SDK low-level server so that exact JSON Schemas stay under our control.

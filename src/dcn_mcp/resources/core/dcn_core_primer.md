@@ -1,6 +1,6 @@
-# DCN Core Primer
+# decentralised.art Core Primer
 
-DCN core concepts are format-agnostic:
+decentralised.art core concepts are format-agnostic:
 - formats define available feature spaces
 - connectors define reusable transformation graphs
 - transformations and conditions are first-class deployable chain entities

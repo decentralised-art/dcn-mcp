@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dcn-mcp"
 version = "0.1.0"
-description = "Core DCN protocol tools for simulation, publication, and onchain execution"
+description = "Core decentralised.art protocol tools for simulation, publication, and onchain execution"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

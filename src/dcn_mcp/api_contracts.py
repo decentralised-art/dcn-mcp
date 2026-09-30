@@ -1,4 +1,4 @@
-"""Runtime access to chain contracts generated from pinned dcn-api-spec OpenAPI."""
+"""Runtime access to chain contracts generated from pinned api-spec OpenAPI."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ def _operation(operation_id: str) -> dict[str, Any]:
     try:
         return _document()["operations"][operation_id]
     except KeyError as exc:
-        raise ValueError(f"Unknown dcn-api-spec operation: {operation_id}") from exc
+        raise ValueError(f"Unknown api-spec operation: {operation_id}") from exc
 
 
 def api_path(operation_id: str, **parameters: object) -> str:
@@ -57,14 +57,14 @@ def api_path(operation_id: str, **parameters: object) -> str:
 
 def _validate(operation_id: str, field: str, payload: Any, schema: Any) -> None:
     if schema is None:
-        raise ValueError(f"{operation_id} has no {field} in dcn-api-spec")
+        raise ValueError(f"{operation_id} has no {field} in api-spec")
     try:
         Draft202012Validator(schema).validate(payload)
     except SchemaValidationError as exc:
         location = ".".join(str(part) for part in exc.absolute_path)
         path = f"{field}.{location}" if location else field
         raise ValidationError(
-            f"{operation_id} violates dcn-api-spec at {path}: {exc.message}",
+            f"{operation_id} violates api-spec at {path}: {exc.message}",
             details={"operation": operation_id, "path": path},
         ) from exc
 

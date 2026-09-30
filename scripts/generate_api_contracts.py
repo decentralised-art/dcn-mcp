@@ -1,4 +1,4 @@
-"""Generate the MCP chain contracts from the pinned dcn-api-spec submodule."""
+"""Generate the MCP chain contracts from the pinned api-spec submodule."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SPEC_ROOT = ROOT / "submodules" / "dcn-api-spec"
+SPEC_ROOT = ROOT / "submodules" / "api-spec"
 OUTPUT = ROOT / "src" / "dcn_mcp" / "generated" / "api_contracts.json"
 OPERATIONS = {
     "GET_version", "GET_nonce", "POST_auth", "GET_connector",
@@ -43,7 +43,7 @@ def resolve(node: Any, source: Path, trail: frozenset[tuple[Path, str]] = frozen
     relative_path, _, pointer = ref.partition("#")
     target_path = (source.parent / relative_path).resolve() if relative_path else source
     if not target_path.is_relative_to(SPEC_ROOT.resolve()):
-        raise ValueError(f"OpenAPI reference escapes dcn-api-spec: {ref}")
+        raise ValueError(f"OpenAPI reference escapes api-spec: {ref}")
     identity = (target_path, pointer)
     if identity in trail:
         raise ValueError(f"Recursive OpenAPI reference: {ref}")
@@ -103,7 +103,7 @@ def operation_contract(path: str, method: str, operation: dict[str, Any],
 def generate() -> str:
     services = SPEC_ROOT / "services"
     if not services.is_dir():
-        raise SystemExit("Initialize the pinned spec: git submodule update --init submodules/dcn-api-spec")
+        raise SystemExit("Initialize the pinned spec: git submodule update --init submodules/api-spec")
     contracts: dict[str, Any] = {}
     for source in sorted(services.glob("*/openapi.yaml")):
         document = load_yaml(source)
@@ -136,11 +136,11 @@ def main() -> None:
     if args.check:
         if not OUTPUT.exists() or OUTPUT.read_text(encoding="utf-8") != generated:
             raise SystemExit(f"{OUTPUT} is stale; run python scripts/generate_api_contracts.py")
-        print(f"API contracts match dcn-api-spec {json.loads(generated)['spec_commit'][:7]}")
+        print(f"API contracts match api-spec {json.loads(generated)['spec_commit'][:7]}")
         return
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(generated, encoding="utf-8")
-    print(f"Generated {OUTPUT} from dcn-api-spec {json.loads(generated)['spec_commit'][:7]}")
+    print(f"Generated {OUTPUT} from api-spec {json.loads(generated)['spec_commit'][:7]}")
 
 
 if __name__ == "__main__":

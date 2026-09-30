@@ -27,7 +27,7 @@ def main() -> None:
 
     python = venv_python(VENV_DIR)
     run([str(python), "-m", "pip", "install", "--upgrade", "pip"])
-    run([str(python), "-m", "pip", "install", "-e", str(ROOT_DIR)])
+    run([str(python), "-m", "pip", "install", "-e", f"{ROOT_DIR}[dev]"])
 
     STAMP.parent.mkdir(parents=True, exist_ok=True)
     STAMP.touch()

@@ -31,6 +31,7 @@ smoke: $(STAMP)
 	"$(VENV_PYTHON)" scripts/smoke_test.py
 
 test: $(STAMP)
+	"$(VENV_PYTHON)" scripts/generate_api_contracts.py --check
 	"$(VENV_PYTHON)" -m unittest discover -s tests -v
 
 stdio: $(STAMP)

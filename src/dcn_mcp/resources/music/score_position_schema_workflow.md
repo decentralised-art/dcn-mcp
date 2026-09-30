@@ -102,7 +102,7 @@ Useful reusable shapers:
 Do not describe `major_scale_steps` as a fixed C-major connector unless a wrapper
 intentionally fixes RI start to `60`.
 
-## Running Instances and Deploy
+## Running Instances, Simulation and Publication
 
 Existing on-chain connectors should remain references. Do not create renamed
 copies such as `piece_constant_value_2` just because the same reusable connector
@@ -115,10 +115,15 @@ Per-use RI values belong to the authored root context:
 - `static_ri` keys are DFS RI positions in that root context.
 - A binding is not an edit to the reused connector. It replaces an open slot of
   a composite occurrence in the root context.
-- `/execute` should send only `dynamic_ri` values for positions that are not
-  locked by deployed `static_ri`.
+- Both `/simulate` and `/execute` should send only `dynamic_ri` values for
+  positions that are not locked by the root's `static_ri`.
 
-If all children and shapers already exist on chain, the normal deployment should
+Create the authored graph as server-local drafts and use `core.simulate_connector`
+to preview it in Studio. Draft creation and simulation do not publish anything.
+Use `core.publish_entity` to publish the drafts on chain, with dependencies first;
+`core.execute_connector` then reads the published graph at the execution block.
+
+If all children and shapers already exist on chain, publication should
 publish only the new root or piece connector. The reused connectors remain
 referenced by name, while usage-specific values live in the root's `static_ri`.
 

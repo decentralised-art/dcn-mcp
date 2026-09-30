@@ -1,0 +1,1897 @@
+{
+  "operations": {
+    "GET_account": {
+      "method": "GET",
+      "path": "/account/{address}",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "after_conditions": {
+            "type": "string"
+          },
+          "after_connectors": {
+            "type": "string"
+          },
+          "after_transformations": {
+            "type": "string"
+          },
+          "limit": {
+            "maximum": 256,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "limit"
+        ],
+        "type": "object"
+      },
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "additionalProperties": false,
+          "description": "Cursor-based account ownership response.",
+          "properties": {
+            "address": {
+              "description": "Ethereum-style address, with or without a 0x prefix.",
+              "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+              "title": "Address",
+              "type": "string"
+            },
+            "cursor_conditions": {
+              "additionalProperties": false,
+              "description": "Cursor state for one ownership list.",
+              "properties": {
+                "has_more": {
+                  "description": "Indicates whether more names are available.",
+                  "type": "boolean"
+                },
+                "next_after": {
+                  "description": "Cursor token for the next page (or null when exhausted).",
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "has_more",
+                "next_after"
+              ],
+              "title": "NameCursorState",
+              "type": "object"
+            },
+            "cursor_connectors": {
+              "additionalProperties": false,
+              "description": "Cursor state for one ownership list.",
+              "properties": {
+                "has_more": {
+                  "description": "Indicates whether more names are available.",
+                  "type": "boolean"
+                },
+                "next_after": {
+                  "description": "Cursor token for the next page (or null when exhausted).",
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "has_more",
+                "next_after"
+              ],
+              "title": "NameCursorState",
+              "type": "object"
+            },
+            "cursor_transformations": {
+              "additionalProperties": false,
+              "description": "Cursor state for one ownership list.",
+              "properties": {
+                "has_more": {
+                  "description": "Indicates whether more names are available.",
+                  "type": "boolean"
+                },
+                "next_after": {
+                  "description": "Cursor token for the next page (or null when exhausted).",
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "has_more",
+                "next_after"
+              ],
+              "title": "NameCursorState",
+              "type": "object"
+            },
+            "limit": {
+              "description": "Page size used for this response.",
+              "maximum": 256,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "owned_conditions": {
+              "description": "Owned condition names.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "owned_connectors": {
+              "description": "Owned connector names.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "owned_transformations": {
+              "description": "Owned transformation names.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "address",
+            "limit",
+            "owned_connectors",
+            "owned_transformations",
+            "owned_conditions",
+            "cursor_connectors",
+            "cursor_transformations",
+            "cursor_conditions"
+          ],
+          "title": "AccountInfoResponse",
+          "type": "object"
+        }
+      }
+    },
+    "GET_condition": {
+      "method": "GET",
+      "path": "/condition/{name}",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "additionalProperties": false,
+          "description": "Condition information. The Solidity source is an execution input kept in local storage or a verified artifact and is never served.\n",
+          "properties": {
+            "address": {
+              "description": "On-chain address once published; \"0x0\" for a local simulation entity.",
+              "type": "string"
+            },
+            "args_count": {
+              "description": "Number of arguments (uint32), derived from the source and registered on chain.",
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "name": {
+              "description": "Condition name.",
+              "type": "string"
+            },
+            "owner": {
+              "description": "Ethereum-style address, with or without a 0x prefix.",
+              "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+              "title": "Address",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "args_count",
+            "owner",
+            "address"
+          ],
+          "title": "ConditionInfoResponse",
+          "type": "object"
+        }
+      }
+    },
+    "GET_connector": {
+      "method": "GET",
+      "path": "/connector/{name}",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "additionalProperties": false,
+          "description": "Connector definition payload returned by GET /connector/{name}.",
+          "properties": {
+            "address": {
+              "description": "On-chain address once published; \"0x0\" for a local simulation entity.",
+              "type": "string"
+            },
+            "condition_args": {
+              "description": "Condition arguments.",
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "condition_name": {
+              "description": "Condition name. Empty string means no condition.",
+              "type": "string"
+            },
+            "dimensions": {
+              "description": "Ordered dimension definitions.",
+              "items": {
+                "additionalProperties": false,
+                "description": "Single connector dimension definition.",
+                "properties": {
+                  "bindings": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "description": "Slot bindings map for composite connectors. Omitted means no bindings. Keys are canonical decimal slot ids and values are connector names.\n",
+                    "type": "object"
+                  },
+                  "composite": {
+                    "description": "Connected composite connector name. Omitted or empty string means none.",
+                    "type": "string"
+                  },
+                  "transformations": {
+                    "description": "Ordered transformation calls for this dimension.",
+                    "items": {
+                      "additionalProperties": false,
+                      "description": "Transformation invocation in a connector dimension.",
+                      "properties": {
+                        "args": {
+                          "description": "Transformation arguments. Omitted means no arguments.",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "type": "array"
+                        },
+                        "name": {
+                          "description": "Transformation name",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ],
+                      "title": "TransformationCallDef",
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "transformations"
+                ],
+                "title": "ConnectorDimension",
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "format_hash": {
+              "description": "Derived format hash for this connector definition.",
+              "type": "string"
+            },
+            "name": {
+              "description": "Connector name.",
+              "type": "string"
+            },
+            "owner": {
+              "description": "Ethereum-style address, with or without a 0x prefix.",
+              "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+              "title": "Address",
+              "type": "string"
+            },
+            "static_ri": {
+              "additionalProperties": {
+                "additionalProperties": false,
+                "description": "Running-instance coordinates pair.",
+                "properties": {
+                  "start_point": {
+                    "description": "Start point index (uint32).",
+                    "maximum": 4294967295,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "transformation_shift": {
+                    "description": "Transformation shift index (uint32).",
+                    "maximum": 4294967295,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "start_point",
+                  "transformation_shift"
+                ],
+                "title": "RunningInstance",
+                "type": "object"
+              },
+              "description": "Static running-instance map keyed by decimal position; empty object when none.",
+              "type": "object"
+            }
+          },
+          "required": [
+            "name",
+            "dimensions",
+            "condition_name",
+            "condition_args",
+            "static_ri",
+            "owner",
+            "address",
+            "format_hash"
+          ],
+          "title": "ConnectorInfoResponse",
+          "type": "object"
+        }
+      }
+    },
+    "GET_feed": {
+      "method": "GET",
+      "path": "/feed",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "before": {
+            "type": "string"
+          },
+          "include_unfinalized": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer"
+          },
+          "limit": {
+            "maximum": 256,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "type": {
+            "description": "Supported feed event type.",
+            "enum": [
+              "connector_added",
+              "transformation_added",
+              "condition_added"
+            ],
+            "title": "FeedEventType",
+            "type": "string"
+          }
+        },
+        "required": [
+          "limit"
+        ],
+        "type": "object"
+      },
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "additionalProperties": false,
+          "description": "Newest-first feed page.",
+          "properties": {
+            "cursor": {
+              "additionalProperties": false,
+              "description": "Pagination cursor metadata for `/feed`.",
+              "properties": {
+                "has_more": {
+                  "description": "Whether another older page is available.",
+                  "type": "boolean"
+                },
+                "next_before": {
+                  "description": "Cursor to pass as `before` for the next older page.",
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "has_more",
+                "next_before"
+              ],
+              "title": "FeedCursor",
+              "type": "object"
+            },
+            "items": {
+              "description": "Feed items in newest-first order.",
+              "items": {
+                "additionalProperties": false,
+                "description": "One projected chain feed item.",
+                "properties": {
+                  "block_number": {
+                    "description": "Source block number.",
+                    "format": "int64",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "created_at_ms": {
+                    "description": "Feed creation time in Unix milliseconds.",
+                    "format": "int64",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "event_type": {
+                    "description": "Supported feed event type.",
+                    "enum": [
+                      "connector_added",
+                      "transformation_added",
+                      "condition_added"
+                    ],
+                    "title": "FeedEventType",
+                    "type": "string"
+                  },
+                  "feed_id": {
+                    "description": "Stable feed identity for this logical entity event.",
+                    "type": "string"
+                  },
+                  "history_cursor": {
+                    "description": "Cursor identifying this feed item's position in history.",
+                    "type": "string"
+                  },
+                  "log_index": {
+                    "description": "Source log index.",
+                    "format": "int64",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "payload": {
+                    "additionalProperties": true,
+                    "description": "Compact feed payload for discovery. Full entity details are available through the exact entity endpoints.\n",
+                    "properties": {
+                      "name": {
+                        "description": "Entity name.",
+                        "type": "string"
+                      },
+                      "owner": {
+                        "description": "Ethereum-style address, with or without a 0x prefix.",
+                        "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+                        "title": "Address",
+                        "type": "string"
+                      },
+                      "type": {
+                        "description": "Entity kind represented by the feed item.",
+                        "enum": [
+                          "connector",
+                          "transformation",
+                          "condition"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "name",
+                      "owner"
+                    ],
+                    "title": "FeedEventPayload",
+                    "type": "object"
+                  },
+                  "projector_version": {
+                    "description": "Feed projector version that produced this item.",
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "status": {
+                    "description": "Chain-finality or removal status for a feed item.",
+                    "enum": [
+                      "observed",
+                      "safe",
+                      "finalized",
+                      "removed"
+                    ],
+                    "title": "FeedEventStatus",
+                    "type": "string"
+                  },
+                  "tx_hash": {
+                    "description": "Source transaction hash.",
+                    "type": "string"
+                  },
+                  "tx_index": {
+                    "description": "Source transaction index inside the block.",
+                    "format": "int64",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "updated_at_ms": {
+                    "description": "Feed update time in Unix milliseconds.",
+                    "format": "int64",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "visible": {
+                    "description": "False when the item should be hidden, for example after removal.",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "feed_id",
+                  "event_type",
+                  "status",
+                  "visible",
+                  "tx_hash",
+                  "block_number",
+                  "tx_index",
+                  "log_index",
+                  "history_cursor",
+                  "created_at_ms",
+                  "updated_at_ms",
+                  "projector_version",
+                  "payload"
+                ],
+                "title": "FeedItem",
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "limit": {
+              "description": "Page size used for this response.",
+              "maximum": 256,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "limit",
+            "cursor",
+            "items"
+          ],
+          "title": "FeedPage",
+          "type": "object"
+        }
+      }
+    },
+    "GET_feedStream": {
+      "method": "GET",
+      "path": "/feed/stream",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "default": 200,
+            "maximum": 2048,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "since_seq": {
+            "default": 0,
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": null,
+      "response_schemas": {}
+    },
+    "GET_format": {
+      "method": "GET",
+      "path": "/format/{hash}",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "after": {
+            "type": "string"
+          },
+          "limit": {
+            "maximum": 256,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "limit"
+        ],
+        "type": "object"
+      },
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "additionalProperties": false,
+          "description": "Connector membership and scalar labels for one format hash.",
+          "properties": {
+            "connectors": {
+              "description": "Connector names using this format hash.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "cursor": {
+              "additionalProperties": false,
+              "description": "Cursor state for connector names within one format.",
+              "properties": {
+                "has_more": {
+                  "description": "Indicates whether more connector names are available.",
+                  "type": "boolean"
+                },
+                "next_after": {
+                  "description": "Connector name cursor for the next page, or null when exhausted.",
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "has_more",
+                "next_after"
+              ],
+              "title": "FormatNameCursorState",
+              "type": "object"
+            },
+            "format_hash": {
+              "description": "32-byte connector format hash, with or without a 0x prefix.",
+              "pattern": "^(0x)?[a-fA-F0-9]{64}$",
+              "title": "FormatHash",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Page size used for connector names.",
+              "maximum": 256,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "scalars": {
+              "description": "Scalar labels encoded as `scalar:tail_id` entries.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "total_connectors": {
+              "description": "Total number of connectors using this format hash.",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "format_hash",
+            "limit",
+            "total_connectors",
+            "cursor",
+            "scalars",
+            "connectors"
+          ],
+          "title": "FormatInfoResponse",
+          "type": "object"
+        }
+      }
+    },
+    "GET_formats": {
+      "method": "GET",
+      "path": "/formats",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "after": {
+            "pattern": "^(0x)?[a-fA-F0-9]{64}$",
+            "type": "string"
+          },
+          "limit": {
+            "maximum": 256,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "limit"
+        ],
+        "type": "object"
+      },
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "additionalProperties": false,
+          "description": "Cursor-based format hash list response.",
+          "properties": {
+            "cursor": {
+              "additionalProperties": false,
+              "description": "Cursor state for the format hash list.",
+              "properties": {
+                "has_more": {
+                  "description": "Indicates whether more format hashes are available.",
+                  "type": "boolean"
+                },
+                "next_after": {
+                  "description": "Format hash cursor for the next page, or null when exhausted.",
+                  "nullable": true,
+                  "pattern": "^(0x)?[a-fA-F0-9]{64}$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "has_more",
+                "next_after"
+              ],
+              "title": "FormatHashCursorState",
+              "type": "object"
+            },
+            "formats": {
+              "description": "Format hashes in ascending cursor order.",
+              "items": {
+                "description": "32-byte connector format hash, with or without a 0x prefix.",
+                "pattern": "^(0x)?[a-fA-F0-9]{64}$",
+                "title": "FormatHash",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "limit": {
+              "description": "Page size used for this response.",
+              "maximum": 256,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "total_formats": {
+              "description": "Total number of known format hashes.",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "limit",
+            "total_formats",
+            "cursor",
+            "formats"
+          ],
+          "title": "FormatListResponse",
+          "type": "object"
+        }
+      }
+    },
+    "GET_nonce": {
+      "method": "GET",
+      "path": "/nonce/{address}",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "additionalProperties": false,
+          "description": "Nonce response.",
+          "properties": {
+            "nonce": {
+              "description": "One-time nonce to be signed by the account owner.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "nonce"
+          ],
+          "title": "NonceResponse",
+          "type": "object"
+        }
+      }
+    },
+    "GET_transformation": {
+      "method": "GET",
+      "path": "/transformation/{name}",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "additionalProperties": false,
+          "description": "Transformation information. The Solidity source is an execution input kept in local storage or a verified artifact and is never served.\n",
+          "properties": {
+            "address": {
+              "description": "On-chain address once published; \"0x0\" for a local simulation entity.",
+              "type": "string"
+            },
+            "args_count": {
+              "description": "Number of arguments (uint32), derived from the source and registered on chain.",
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "name": {
+              "description": "Transformation name.",
+              "type": "string"
+            },
+            "owner": {
+              "description": "Ethereum-style address, with or without a 0x prefix.",
+              "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+              "title": "Address",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "args_count",
+            "owner",
+            "address"
+          ],
+          "title": "TransformationInfoResponse",
+          "type": "object"
+        }
+      }
+    },
+    "GET_version": {
+      "method": "GET",
+      "path": "/version",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "additionalProperties": false,
+          "description": "Version information.",
+          "properties": {
+            "build_timestamp": {
+              "description": "ISO-8601 build timestamp of the running server",
+              "example": "2025-12-16T21:42:11Z",
+              "type": "string"
+            },
+            "version": {
+              "description": "Human-readable service version",
+              "example": "0.4.0",
+              "type": "string"
+            }
+          },
+          "required": [
+            "build_timestamp",
+            "version"
+          ],
+          "title": "VersionResponse",
+          "type": "object"
+        }
+      }
+    },
+    "POST_auth": {
+      "method": "POST",
+      "path": "/auth",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": {
+        "additionalProperties": false,
+        "description": "Auth request.",
+        "properties": {
+          "address": {
+            "description": "Ethereum-style address, with or without a 0x prefix.",
+            "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+            "title": "Address",
+            "type": "string"
+          },
+          "message": {
+            "description": "Login message signed by the account owner. Must be `Login nonce: <nonce>`.\n",
+            "type": "string"
+          },
+          "signature": {
+            "description": "Wallet signature of the login message.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "address",
+          "message",
+          "signature"
+        ],
+        "title": "AuthRequest",
+        "type": "object"
+      },
+      "response_schemas": {
+        "200": {
+          "additionalProperties": false,
+          "description": "Auth response.",
+          "properties": {
+            "access_token": {
+              "description": "JWT access token for protected chain endpoints.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "access_token"
+          ],
+          "title": "AuthResponse",
+          "type": "object"
+        }
+      }
+    },
+    "POST_condition": {
+      "method": "POST",
+      "path": "/condition",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": {
+        "additionalProperties": false,
+        "description": "Create condition request",
+        "properties": {
+          "name": {
+            "description": "Entity name. Starts with a letter or '_', contains only letters, digits and '_', at most 128 characters.\n",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+            "title": "EntityName",
+            "type": "string"
+          },
+          "sol_src": {
+            "description": "Solidity source code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "sol_src"
+        ],
+        "title": "CreateConditionRequest",
+        "type": "object"
+      },
+      "response_schemas": {
+        "201": {
+          "additionalProperties": false,
+          "description": "Create condition response",
+          "properties": {
+            "address": {
+              "description": "Always \"0x0\"; the entity is local until published through /publish/condition.",
+              "type": "string"
+            },
+            "args_count": {
+              "description": "Number of arguments (uint32) parsed from the Solidity source.",
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "name": {
+              "description": "Name of the created condition",
+              "type": "string"
+            },
+            "owner": {
+              "description": "Ethereum-style address, with or without a 0x prefix.",
+              "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+              "title": "Address",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "owner",
+            "address",
+            "args_count"
+          ],
+          "title": "CreateConditionResponse",
+          "type": "object"
+        }
+      }
+    },
+    "POST_connector": {
+      "method": "POST",
+      "path": "/connector",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": {
+        "additionalProperties": false,
+        "description": "Connector create request payload.",
+        "properties": {
+          "condition_args": {
+            "description": "Condition arguments. Omitted means no condition arguments.",
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "condition_name": {
+            "description": "Condition name. Omitted or empty string means no condition.",
+            "type": "string"
+          },
+          "dimensions": {
+            "description": "Ordered dimension definitions.",
+            "items": {
+              "additionalProperties": false,
+              "description": "Single connector dimension definition.",
+              "properties": {
+                "bindings": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Slot bindings map for composite connectors. Omitted means no bindings. Keys are canonical decimal slot ids and values are connector names.\n",
+                  "type": "object"
+                },
+                "composite": {
+                  "description": "Connected composite connector name. Omitted or empty string means none.",
+                  "type": "string"
+                },
+                "transformations": {
+                  "description": "Ordered transformation calls for this dimension.",
+                  "items": {
+                    "additionalProperties": false,
+                    "description": "Transformation invocation in a connector dimension.",
+                    "properties": {
+                      "args": {
+                        "description": "Transformation arguments. Omitted means no arguments.",
+                        "items": {
+                          "type": "integer"
+                        },
+                        "type": "array"
+                      },
+                      "name": {
+                        "description": "Transformation name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ],
+                    "title": "TransformationCallDef",
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "transformations"
+              ],
+              "title": "ConnectorDimension",
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "name": {
+            "description": "Entity name. Starts with a letter or '_', contains only letters, digits and '_', at most 128 characters.\n",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+            "title": "EntityName",
+            "type": "string"
+          },
+          "static_ri": {
+            "additionalProperties": {
+              "additionalProperties": false,
+              "description": "Running-instance coordinates pair.",
+              "properties": {
+                "start_point": {
+                  "description": "Start point index (uint32).",
+                  "maximum": 4294967295,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "transformation_shift": {
+                  "description": "Transformation shift index (uint32).",
+                  "maximum": 4294967295,
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "start_point",
+                "transformation_shift"
+              ],
+              "title": "RunningInstance",
+              "type": "object"
+            },
+            "description": "Optional static running-instance map. Keys are canonical decimal positions (for example \"0\", \"3\", \"5\").\n",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "dimensions"
+        ],
+        "title": "CreateConnectorRequest",
+        "type": "object"
+      },
+      "response_schemas": {
+        "201": {
+          "additionalProperties": false,
+          "description": "Connector create response payload.",
+          "properties": {
+            "address": {
+              "description": "Always \"0x0\"; the entity is local until published through /publish/connector.",
+              "type": "string"
+            },
+            "format_hash": {
+              "description": "Derived format hash for this connector definition.",
+              "type": "string"
+            },
+            "name": {
+              "description": "Connector name.",
+              "type": "string"
+            },
+            "owner": {
+              "description": "Ethereum-style address, with or without a 0x prefix.",
+              "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+              "title": "Address",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "owner",
+            "address",
+            "format_hash"
+          ],
+          "title": "CreateConnectorResponse",
+          "type": "object"
+        }
+      }
+    },
+    "POST_execute": {
+      "method": "POST",
+      "path": "/execute",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": {
+        "additionalProperties": false,
+        "description": "Execute request payload.",
+        "properties": {
+          "connector_name": {
+            "description": "Connector name to execute.",
+            "type": "string"
+          },
+          "dynamic_ri": {
+            "additionalProperties": {
+              "additionalProperties": false,
+              "description": "Running-instance coordinates pair.",
+              "properties": {
+                "start_point": {
+                  "description": "Start point index (uint32).",
+                  "maximum": 4294967295,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "transformation_shift": {
+                  "description": "Transformation shift index (uint32).",
+                  "maximum": 4294967295,
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "start_point",
+                "transformation_shift"
+              ],
+              "title": "RunningInstance",
+              "type": "object"
+            },
+            "description": "Dynamic running-instance overrides keyed by canonical decimal RI position. Omitted means no overrides. At most 4096 entries.\n",
+            "type": "object"
+          },
+          "particles_count": {
+            "description": "Number of particles to generate. The backend accepts protobuf JSON uint32 values between 1 and 65536.\n",
+            "oneOf": [
+              {
+                "maximum": 65536,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "pattern": "^[1-9][0-9]*$",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "connector_name",
+          "particles_count"
+        ],
+        "title": "ExecuteRequest",
+        "type": "object"
+      },
+      "response_schemas": {
+        "200": {
+          "additionalProperties": false,
+          "description": "On-chain execution result. Anyone can check it by calling the runner at the same block.\n",
+          "properties": {
+            "block_hash": {
+              "description": "Hash of that block.",
+              "type": "string"
+            },
+            "block_number": {
+              "description": "Block the call was pinned to.",
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "particles": {
+              "description": "Execution result list.",
+              "items": {
+                "additionalProperties": false,
+                "description": "One returned scalar stream for an execution path.",
+                "properties": {
+                  "data": {
+                    "description": "Output particle values for this path.",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  "path": {
+                    "description": "Fully-qualified execution path.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path",
+                  "data"
+                ],
+                "title": "ParticlesResultItem",
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "runner": {
+              "description": "Runner contract address that executed the call.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "block_number",
+            "block_hash",
+            "runner",
+            "particles"
+          ],
+          "title": "ExecuteResponse",
+          "type": "object"
+        }
+      }
+    },
+    "POST_publishConfirm": {
+      "method": "POST",
+      "path": "/publish/{kind}",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": {
+        "description": "Confirm a publication transaction the owner's wallet sent.",
+        "properties": {
+          "content_hash": {
+            "description": "32-byte hex value.",
+            "pattern": "^(0x)?[a-fA-F0-9]{64}$",
+            "title": "Hash32",
+            "type": "string"
+          },
+          "name": {
+            "description": "Entity name. Starts with a letter or '_', contains only letters, digits and '_', at most 128 characters.\n",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+            "title": "EntityName",
+            "type": "string"
+          },
+          "tx_hash": {
+            "description": "Hash of the sent publication transaction.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "content_hash",
+          "tx_hash"
+        ],
+        "title": "ConfirmRequest",
+        "type": "object"
+      },
+      "response_schemas": {
+        "201": {
+          "additionalProperties": false,
+          "description": "The transaction was mined with status 1 and carries exactly one matching registry event naming the entity, owner, content and metadata hashes.\n",
+          "properties": {
+            "address": {
+              "description": "Ethereum-style address, with or without a 0x prefix.",
+              "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+              "title": "Address",
+              "type": "string"
+            },
+            "block_number": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "content_hash": {
+              "description": "32-byte hex value.",
+              "pattern": "^(0x)?[a-fA-F0-9]{64}$",
+              "title": "Hash32",
+              "type": "string"
+            },
+            "kind": {
+              "description": "Kind of entity being published.",
+              "enum": [
+                "transformation",
+                "condition",
+                "connector"
+              ],
+              "title": "EntityKind",
+              "type": "string"
+            },
+            "name": {
+              "description": "Entity name. Starts with a letter or '_', contains only letters, digits and '_', at most 128 characters.\n",
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+              "title": "EntityName",
+              "type": "string"
+            },
+            "owner": {
+              "description": "Ethereum-style address, with or without a 0x prefix.",
+              "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+              "title": "Address",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "mined"
+              ],
+              "type": "string"
+            },
+            "tx_hash": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "kind",
+            "name",
+            "tx_hash",
+            "block_number",
+            "address",
+            "owner",
+            "content_hash"
+          ],
+          "title": "ConfirmResponse",
+          "type": "object"
+        },
+        "202": {
+          "description": "Publication error. Optional fields appear only when relevant.",
+          "properties": {
+            "message": {
+              "description": "Human-readable message.",
+              "type": "string"
+            },
+            "mismatched": {
+              "description": "Connector dependencies registered with a different artifact.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "missing": {
+              "description": "Connector dependencies absent from the target registry.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "status": {
+              "description": "Present on 202 while the transaction is not mined yet.",
+              "enum": [
+                "pending"
+              ],
+              "type": "string"
+            },
+            "tx_hash": {
+              "description": "Transaction the error refers to.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "message"
+          ],
+          "title": "PublishError",
+          "type": "object"
+        }
+      }
+    },
+    "POST_publishPrepare": {
+      "method": "POST",
+      "path": "/publish/{kind}/prepare",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": {
+        "description": "Prepare the publication of an entity the caller created on this server.",
+        "properties": {
+          "name": {
+            "description": "Entity name. Starts with a letter or '_', contains only letters, digits and '_', at most 128 characters.\n",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+            "title": "EntityName",
+            "type": "string"
+          },
+          "relay": {
+            "default": false,
+            "description": "Also return `signing`, what an offline signer needs to complete the transaction for POST /publish/{kind}/send. Leave unset for a browser wallet, which chooses its own nonce and fees.\n",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "PrepareRequest",
+        "type": "object"
+      },
+      "response_schemas": {
+        "200": {
+          "description": "Either the transaction the owner's wallet must send, or, when the registry already holds this exact publication, the existing registration.\n",
+          "discriminator": {
+            "mapping": {
+              "prepared": "preparedPublication.yaml",
+              "published": "alreadyPublished.yaml"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "additionalProperties": false,
+              "description": "The transaction the owner's wallet must send to publish the entity.",
+              "properties": {
+                "address": {
+                  "description": "Ethereum-style address, with or without a 0x prefix.",
+                  "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+                  "title": "Address",
+                  "type": "string"
+                },
+                "content_hash": {
+                  "description": "32-byte hex value.",
+                  "pattern": "^(0x)?[a-fA-F0-9]{64}$",
+                  "title": "Hash32",
+                  "type": "string"
+                },
+                "deadline": {
+                  "description": "Unix seconds after which the registry refuses the transaction.",
+                  "format": "int64",
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "kind": {
+                  "description": "Kind of entity being published.",
+                  "enum": [
+                    "transformation",
+                    "condition",
+                    "connector"
+                  ],
+                  "title": "EntityKind",
+                  "type": "string"
+                },
+                "name": {
+                  "description": "Entity name. Starts with a letter or '_', contains only letters, digits and '_', at most 128 characters.\n",
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+                  "title": "EntityName",
+                  "type": "string"
+                },
+                "publication_nonce": {
+                  "description": "Owner's publication nonce bound into the transaction.",
+                  "format": "int64",
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "signing": {
+                  "additionalProperties": false,
+                  "description": "Present only when the request set `relay`. Merged into `transaction`, these complete an EIP-1559 transaction an owner can sign offline. Quantities are hex.\n",
+                  "properties": {
+                    "maxFeePerGas": {
+                      "pattern": "^0x[0-9a-f]+$",
+                      "type": "string"
+                    },
+                    "maxPriorityFeePerGas": {
+                      "pattern": "^0x[0-9a-f]+$",
+                      "type": "string"
+                    },
+                    "nonce": {
+                      "description": "The owner's pending account nonce.",
+                      "pattern": "^0x[0-9a-f]+$",
+                      "type": "string"
+                    },
+                    "type": {
+                      "enum": [
+                        "0x2"
+                      ],
+                      "type": "string"
+                    },
+                    "value": {
+                      "enum": [
+                        "0x0"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "nonce",
+                    "maxFeePerGas",
+                    "maxPriorityFeePerGas",
+                    "value"
+                  ],
+                  "title": "SigningFields",
+                  "type": "object"
+                },
+                "status": {
+                  "enum": [
+                    "prepared"
+                  ],
+                  "type": "string"
+                },
+                "transaction": {
+                  "additionalProperties": false,
+                  "description": "Registry call ready for eth_sendTransaction; quantities are hex, as wallets expect. The calldata carries an empty owner signature, which the registry accepts because the owner is the sender.\n",
+                  "properties": {
+                    "chainId": {
+                      "description": "Chain id as a hex quantity.",
+                      "pattern": "^0x[0-9a-f]+$",
+                      "type": "string"
+                    },
+                    "data": {
+                      "description": "Hex-encoded calldata.",
+                      "type": "string"
+                    },
+                    "from": {
+                      "description": "Ethereum-style address, with or without a 0x prefix.",
+                      "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+                      "title": "Address",
+                      "type": "string"
+                    },
+                    "gas": {
+                      "description": "Gas limit (estimate plus headroom) as a hex quantity.",
+                      "pattern": "^0x[0-9a-f]+$",
+                      "type": "string"
+                    },
+                    "to": {
+                      "description": "Ethereum-style address, with or without a 0x prefix.",
+                      "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+                      "title": "Address",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to",
+                    "data",
+                    "chainId",
+                    "gas"
+                  ],
+                  "title": "UnsignedTransaction",
+                  "type": "object"
+                }
+              },
+              "required": [
+                "status",
+                "kind",
+                "name",
+                "transaction",
+                "address",
+                "content_hash",
+                "publication_nonce",
+                "deadline"
+              ],
+              "title": "PreparedPublication",
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "description": "The registry already holds this exact publication; nothing to send.",
+              "properties": {
+                "address": {
+                  "description": "Ethereum-style address, with or without a 0x prefix.",
+                  "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+                  "title": "Address",
+                  "type": "string"
+                },
+                "content_hash": {
+                  "description": "32-byte hex value.",
+                  "pattern": "^(0x)?[a-fA-F0-9]{64}$",
+                  "title": "Hash32",
+                  "type": "string"
+                },
+                "kind": {
+                  "description": "Kind of entity being published.",
+                  "enum": [
+                    "transformation",
+                    "condition",
+                    "connector"
+                  ],
+                  "title": "EntityKind",
+                  "type": "string"
+                },
+                "name": {
+                  "description": "Entity name. Starts with a letter or '_', contains only letters, digits and '_', at most 128 characters.\n",
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+                  "title": "EntityName",
+                  "type": "string"
+                },
+                "owner": {
+                  "description": "Ethereum-style address, with or without a 0x prefix.",
+                  "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+                  "title": "Address",
+                  "type": "string"
+                },
+                "status": {
+                  "enum": [
+                    "published"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "kind",
+                "name",
+                "address",
+                "owner",
+                "content_hash"
+              ],
+              "title": "AlreadyPublished",
+              "type": "object"
+            }
+          ],
+          "title": "PrepareResponse"
+        }
+      }
+    },
+    "POST_publishSend": {
+      "method": "POST",
+      "path": "/publish/{kind}/send",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": {
+        "description": "Broadcast a publication transaction the owner signed offline.",
+        "properties": {
+          "content_hash": {
+            "description": "32-byte hex value.",
+            "pattern": "^(0x)?[a-fA-F0-9]{64}$",
+            "title": "Hash32",
+            "type": "string"
+          },
+          "name": {
+            "description": "Entity name. Starts with a letter or '_', contains only letters, digits and '_', at most 128 characters.\n",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+            "title": "EntityName",
+            "type": "string"
+          },
+          "raw_tx": {
+            "description": "Signed type-2 transaction: `transaction` merged with `signing` from a relay prepare, as `0x02 || rlp(...)`.\n",
+            "pattern": "^0x02[0-9a-fA-F]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "content_hash",
+          "raw_tx"
+        ],
+        "title": "SendRequest",
+        "type": "object"
+      },
+      "response_schemas": {
+        "202": {
+          "additionalProperties": false,
+          "description": "The provider accepted the transaction, or already held it. Confirm it with POST /publish/{kind}.\n",
+          "properties": {
+            "status": {
+              "enum": [
+                "pending"
+              ],
+              "type": "string"
+            },
+            "tx_hash": {
+              "description": "Hash of the broadcast transaction.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "tx_hash"
+          ],
+          "title": "SendResponse",
+          "type": "object"
+        }
+      }
+    },
+    "POST_simulate": {
+      "method": "POST",
+      "path": "/simulate",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": {
+        "additionalProperties": false,
+        "description": "Execute request payload.",
+        "properties": {
+          "connector_name": {
+            "description": "Connector name to execute.",
+            "type": "string"
+          },
+          "dynamic_ri": {
+            "additionalProperties": {
+              "additionalProperties": false,
+              "description": "Running-instance coordinates pair.",
+              "properties": {
+                "start_point": {
+                  "description": "Start point index (uint32).",
+                  "maximum": 4294967295,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "transformation_shift": {
+                  "description": "Transformation shift index (uint32).",
+                  "maximum": 4294967295,
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "start_point",
+                "transformation_shift"
+              ],
+              "title": "RunningInstance",
+              "type": "object"
+            },
+            "description": "Dynamic running-instance overrides keyed by canonical decimal RI position. Omitted means no overrides. At most 4096 entries.\n",
+            "type": "object"
+          },
+          "particles_count": {
+            "description": "Number of particles to generate. The backend accepts protobuf JSON uint32 values between 1 and 65536.\n",
+            "oneOf": [
+              {
+                "maximum": 65536,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "pattern": "^[1-9][0-9]*$",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "connector_name",
+          "particles_count"
+        ],
+        "title": "ExecuteRequest",
+        "type": "object"
+      },
+      "response_schemas": {
+        "200": {
+          "description": "Execution result list.",
+          "items": {
+            "additionalProperties": false,
+            "description": "One returned scalar stream for an execution path.",
+            "properties": {
+              "data": {
+                "description": "Output particle values for this path.",
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "path": {
+                "description": "Fully-qualified execution path.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "data"
+            ],
+            "title": "ParticlesResultItem",
+            "type": "object"
+          },
+          "title": "SimulateResponse",
+          "type": "array"
+        }
+      }
+    },
+    "POST_transformation": {
+      "method": "POST",
+      "path": "/transformation",
+      "query_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "request_schema": {
+        "additionalProperties": false,
+        "description": "Create transformation request",
+        "properties": {
+          "name": {
+            "description": "Entity name. Starts with a letter or '_', contains only letters, digits and '_', at most 128 characters.\n",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+            "title": "EntityName",
+            "type": "string"
+          },
+          "sol_src": {
+            "description": "Solidity source code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "sol_src"
+        ],
+        "title": "CreateTransformationRequest",
+        "type": "object"
+      },
+      "response_schemas": {
+        "201": {
+          "additionalProperties": false,
+          "description": "Create transformation response",
+          "properties": {
+            "address": {
+              "description": "Always \"0x0\"; the entity is local until published through /publish/transformation.",
+              "type": "string"
+            },
+            "args_count": {
+              "description": "Number of arguments (uint32) parsed from the Solidity source.",
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "name": {
+              "description": "Name of the created transformation",
+              "type": "string"
+            },
+            "owner": {
+              "description": "Ethereum-style address, with or without a 0x prefix.",
+              "pattern": "^(0x)?[a-fA-F0-9]{40}$",
+              "title": "Address",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "owner",
+            "address",
+            "args_count"
+          ],
+          "title": "CreateTransformationResponse",
+          "type": "object"
+        }
+      }
+    }
+  },
+  "spec_commit": "8761ecb57983dc33c36e271defec2123c26dfb0e"
+}

@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import json
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
-from urllib.parse import quote
 
 import requests
 from eth_account.messages import encode_defunct
 
+from .api_contracts import api_path, validate_query, validate_request, validate_response
+from .lifecycle import LifecycleClientMixin, execution_particles
 from .models import ChainCursor, TransformationPair
 
 
-class DCNClient:
+class DCNClient(LifecycleClientMixin):
     def __init__(self, base_url: str, timeout: float = 15.0):
         self.base_url = base_url.rstrip("/")
         self.timeout = float(timeout)
@@ -82,7 +83,7 @@ class DCNClient:
         return response
 
     def get_nonce(self, address: str) -> str:
-        response = self.session.get(f"{self.base_url}/nonce/{_path_segment(address)}", timeout=self.timeout)
+        response = self.session.get(f"{self.base_url}{api_path('GET_nonce', address=address)}", timeout=self.timeout)
         response.raise_for_status()
         payload = response.json()
         if isinstance(payload, dict) and "nonce" in payload:
@@ -90,9 +91,11 @@ class DCNClient:
         raise ValueError(f"Unexpected nonce response shape: {payload}")
 
     def post_auth(self, address: str, message: str, signature: str) -> Dict[str, Any]:
+        payload = {"address": address, "message": message, "signature": signature}
+        validate_request("POST_auth", payload)
         response = self.session.post(
-            f"{self.base_url}/auth",
-            json={"address": address, "message": message, "signature": signature},
+            f"{self.base_url}{api_path('POST_auth')}",
+            json=payload,
             timeout=self.timeout,
         )
         data = self._handle_response(response)
@@ -110,16 +113,16 @@ class DCNClient:
             raise RuntimeError(f"Auth failed — missing access token: {auth_result}")
 
     def get_connector(self, name: str) -> Dict[str, Any]:
-        return self._handle_response(self._get(f"/connector/{_path_segment(name)}"))
+        return self._handle_response(self._get(api_path("GET_connector", name=name)))
 
     def get_transformation(self, name: str) -> Dict[str, Any]:
-        return self._handle_response(self._get(f"/transformation/{_path_segment(name)}"))
+        return self._handle_response(self._get(api_path("GET_transformation", name=name)))
 
     def get_condition(self, name: str) -> Dict[str, Any]:
-        return self._handle_response(self._get(f"/condition/{_path_segment(name)}"))
+        return self._handle_response(self._get(api_path("GET_condition", name=name)))
 
     def connector_exists(self, name: str) -> bool:
-        response = self._get(f"/connector/{_path_segment(name)}")
+        response = self._get(api_path("GET_connector", name=name))
         if response.status_code == 404:
             return False
         if response.ok:
@@ -128,7 +131,7 @@ class DCNClient:
         raise RuntimeError(f"Failed to check connector '{name}': {response.status_code} {body}")
 
     def transformation_exists(self, name: str) -> bool:
-        response = self._get(f"/transformation/{_path_segment(name)}")
+        response = self._get(api_path("GET_transformation", name=name))
         if response.status_code == 404:
             return False
         if response.ok:
@@ -137,7 +140,7 @@ class DCNClient:
         raise RuntimeError(f"Failed to check transformation '{name}': {response.status_code} {body}")
 
     def condition_exists(self, name: str) -> bool:
-        response = self._get(f"/condition/{_path_segment(name)}")
+        response = self._get(api_path("GET_condition", name=name))
         if response.status_code == 404:
             return False
         if response.ok:
@@ -146,42 +149,54 @@ class DCNClient:
         raise RuntimeError(f"Failed to check condition '{name}': {response.status_code} {body}")
 
     def post_connector(self, payload: Dict[str, Any], acct) -> Dict[str, Any]:
-        return self._handle_response(self._post_with_reauth("/connector", payload, acct))
+        validate_request("POST_connector", payload)
+        return self._handle_response(self._post_with_reauth(api_path("POST_connector"), payload, acct))
 
     def post_transformation(self, payload: Dict[str, Any], acct) -> Dict[str, Any]:
-        return self._handle_response(self._post_with_reauth("/transformation", payload, acct))
+        validate_request("POST_transformation", payload)
+        return self._handle_response(self._post_with_reauth(api_path("POST_transformation"), payload, acct))
 
     def post_condition(self, payload: Dict[str, Any], acct) -> Dict[str, Any]:
-        return self._handle_response(self._post_with_reauth("/condition", payload, acct))
+        validate_request("POST_condition", payload)
+        return self._handle_response(self._post_with_reauth(api_path("POST_condition"), payload, acct))
 
-    def execute_connector(
-        self,
-        acct,
-        connector_name: str,
-        particles_count: int,
-        dynamic_ri: Optional[Dict[str, Dict[str, int]]] = None,
-    ) -> List[Dict[str, Any]]:
-        payload = {
-            "connector_name": connector_name,
-            "particles_count": int(particles_count),
-            "dynamic_ri": dynamic_ri or {},
-        }
-        data = self._handle_response(self._post_with_reauth("/execute", payload, acct))
-        if not isinstance(data, list):
-            raise RuntimeError(f"Unexpected /execute response shape: {type(data).__name__}")
+    def _run_connector(self, operation_id, acct, connector_name, particles_count, dynamic_ri):
+        payload = {"connector_name": connector_name, "particles_count": int(particles_count),
+                   "dynamic_ri": dynamic_ri or {}}
+        validate_request(operation_id, payload)
+        response = self._post_with_reauth(api_path(operation_id), payload, acct)
+        data = self._handle_response(response)
+        if operation_id == "POST_execute" and not isinstance(data, dict):
+            raise ValueError("/execute requires a block-anchored execution envelope")
+        if operation_id == "POST_simulate" and not isinstance(data, list):
+            raise ValueError("/simulate requires a particle array")
+        execution_particles(data)
+        validate_response(operation_id, data, getattr(response, "status_code", None))
         return data
+
+    def execute_connector(self, acct, connector_name: str, particles_count: int,
+                          dynamic_ri=None) -> Dict[str, Any]:
+        """Read the published connector on chain, preserving block provenance."""
+        return self._run_connector("POST_execute", acct, connector_name, particles_count, dynamic_ri)
+
+    def simulate_connector(self, acct, connector_name: str, particles_count: int,
+                           dynamic_ri=None) -> List[Dict[str, Any]]:
+        """Preview a local draft in the server simulation EVM; no publication."""
+        return self._run_connector("POST_simulate", acct, connector_name, particles_count, dynamic_ri)
 
     def list_formats(self, limit: int = 100, after: Optional[str] = None) -> Dict[str, Any]:
         params: Dict[str, Any] = {"limit": int(limit)}
         if after is not None:
             params["after"] = after
-        return self._handle_response(self._get("/formats", params=params))
+        validate_query("GET_formats", params)
+        return self._handle_response(self._get(api_path("GET_formats"), params=params))
 
     def get_format(self, format_hash: str, limit: int = 256, after: Optional[str] = None) -> Dict[str, Any]:
         params: Dict[str, Any] = {"limit": int(limit)}
         if after is not None:
             params["after"] = after
-        return self._handle_response(self._get(f"/format/{_path_segment(format_hash)}", params=params))
+        validate_query("GET_format", params)
+        return self._handle_response(self._get(api_path("GET_format", hash=format_hash), params=params))
 
     def get_account(
         self,
@@ -199,7 +214,8 @@ class DCNClient:
             params["after_transformations"] = after_transformations
         if after_conditions is not None:
             params["after_conditions"] = after_conditions
-        return self._handle_response(self._get(f"/account/{_path_segment(address)}", params=params))
+        validate_query("GET_account", params)
+        return self._handle_response(self._get(api_path("GET_account", address=address), params=params))
 
     def get_feed_page(
         self,
@@ -216,12 +232,15 @@ class DCNClient:
             params["type"] = event_type
         if include_unfinalized is not None:
             params["include_unfinalized"] = 1 if include_unfinalized else 0
-        return self._handle_response(self._get("/feed", params=params))
+        validate_query("GET_feed", params)
+        return self._handle_response(self._get(api_path("GET_feed"), params=params))
 
     def get_feed_stream_replay(self, *, since_seq: int = 0, limit: int = 200) -> Dict[str, Any]:
+        params = {"since_seq": int(since_seq), "limit": int(limit)}
+        validate_query("GET_feedStream", params)
         response = self.session.get(
-            f"{self.base_url}/feed/stream",
-            params={"since_seq": int(since_seq), "limit": int(limit)},
+            f"{self.base_url}{api_path('GET_feedStream')}",
+            params=params,
             headers=self._authz_headers(),
             timeout=self.timeout,
             stream=True,
@@ -257,10 +276,6 @@ def resolve_cursor(payload: Dict[str, Any]) -> ChainCursor:
         has_more=bool(payload.get("has_more")),
         next_after=(str(payload.get("next_after")).strip() if payload.get("next_after") else None),
     )
-
-
-def _path_segment(value: object) -> str:
-    return quote(str(value).strip(), safe="")
 
 
 def parse_sse_replay_lines(lines: Iterable[Any]) -> Dict[str, Any]:

@@ -42,6 +42,24 @@ class InternalToolError(DCNMCPError):
 
 
 def error_to_payload(exc: Exception) -> Dict[str, Any]:
+    import requests
+    from .lifecycle import PublicationPending
+    if isinstance(exc, PublicationPending):
+        return {"code": "publication_pending", "message": str(exc), "details": exc.publication}
+    if isinstance(exc, ValueError):
+        return {"code": "validation_error", "message": str(exc)}
+    if isinstance(exc, requests.HTTPError) and exc.response is not None:
+        try:
+            body = exc.response.json()
+        except ValueError:
+            body = {}
+        if not isinstance(body, dict):
+            body = {}
+        details = {"status_code": exc.response.status_code}
+        for key in ("missing", "mismatched"):
+            if isinstance(body.get(key), list):
+                details[key] = body[key]
+        return {"code": "http_error", "message": str(body.get("message") or "DCN request failed"), "details": details}
     if isinstance(exc, DCNMCPError):
         return exc.to_payload()
     return InternalToolError(

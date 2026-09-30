@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import Mock
 
 from dcn_mcp.context import clear_runtime_overrides, set_runtime_overrides
 from dcn_mcp.server import build_registries
@@ -30,10 +31,10 @@ class FakeClient:
         return {"name": name, "dimensions": []}
 
     def get_transformation(self, name):
-        return {"name": name, "code": "// solidity"}
+        return {"name": name, "args_count": 1, "owner": "0xabc", "address": "0x0"}
 
     def get_condition(self, name):
-        return {"name": name, "code": "// condition"}
+        return {"name": name, "args_count": 0, "owner": "0xabc", "address": "0x0"}
 
     def get_feed_page(self, *, limit=100, before=None, event_type=None, include_unfinalized=None):
         return {
@@ -85,8 +86,11 @@ class FakeClient:
     def post_condition(self, payload, acct):
         return {"name": payload.get("name"), "owner": acct.address}
 
-    def execute_connector(self, acct, connector_name, particles_count, dynamic_ri=None):
+    def simulate_connector(self, acct, connector_name, particles_count, dynamic_ri=None):
         return [{"path": "/cell:0/pitch:0", "data": [60]}]
+
+    def execute_connector(self, acct, connector_name, particles_count, dynamic_ri=None):
+        return {"block_number": 42, "block_hash": "0x" + "ab" * 32, "runner": "0x" + "12" * 20, "particles": [{"path": "/cell:0/pitch:0", "data": [60]}]}
 
 
 def fake_account_loader(_private_key):
@@ -119,7 +123,7 @@ class CoreIntegrationTests(unittest.TestCase):
     def test_get_condition_uses_fake_client(self):
         result = self.registry.invoke("core.get_condition", {"name": "always_true"})
         self.assertTrue(result["ok"])
-        self.assertEqual(result["data"], {"name": "always_true", "code": "// condition"})
+        self.assertEqual(result["data"], {"name": "always_true", "args_count": 0, "owner": "0xabc", "address": "0x0"})
 
     def test_get_feed_page_uses_fake_client(self):
         result = self.registry.invoke("core.get_feed_page", {"limit": 50, "type": "connector_added", "include_unfinalized": True})
@@ -149,11 +153,52 @@ class CoreIntegrationTests(unittest.TestCase):
     def test_execute_connector_uses_fake_client_and_account(self):
         result = self.registry.invoke("core.execute_connector", {"connector_name": "piece", "particles_count": 8})
         self.assertTrue(result["ok"])
-        self.assertEqual(result["data"]["samples"][0]["data"], [60])
+        self.assertEqual(result["data"]["particles"][0]["data"], [60])
+        self.assertNotIn("samples", result["data"])
+        self.assertEqual(result["data"]["block_number"], 42)
+        self.assertEqual(result["data"]["execution_mode"], "chain")
 
-    def test_deploy_transformation_and_condition_use_fake_client_and_account(self):
-        transformation = self.registry.invoke("core.deploy_transformation", {"payload": {"name": "xform"}})
-        condition = self.registry.invoke("core.deploy_condition", {"payload": {"name": "cond"}})
+    def test_creation_and_simulation_never_publish(self):
+        client = FakeClient("https://example.invalid", 1)
+        client.publish = Mock(side_effect=AssertionError("draft must not spend gas"))
+        set_runtime_overrides(client_factory=lambda *args: client, account_loader=fake_account_loader)
+        for kind in ("connector", "transformation", "condition"):
+            result = self.registry.invoke(f"core.create_{kind}", {"payload": {"name": "draft"}})
+            self.assertTrue(result["ok"])
+        result = self.registry.invoke("core.simulate_connector", {"connector_name": "draft", "particles_count": 8})
+        self.assertEqual(result["data"]["execution_mode"], "simulation")
+        self.assertNotIn("block_hash", result["data"])
+        self.assertNotIn("samples", result["data"])
+        client.publish.assert_not_called()
+        for name in ("inspect.group_execution_tree", "inspect.summarize_execution", "music.extract_note_events"):
+            inspected = self.registry.invoke(name, {"samples": result["data"]["particles"]})
+            self.assertTrue(inspected["ok"], inspected)
+            self.assertIsNone(inspected["data"]["provenance"])
+
+    def test_execute_not_yet_at_safe_block_never_substitutes_simulation(self):
+        import requests
+        for status in (404, 503):
+            client = FakeClient("https://example.invalid", 1)
+            response = requests.Response()
+            response.status_code = status
+            client.execute_connector = Mock(side_effect=requests.HTTPError("not available at execution block", response=response))
+            client.simulate_connector = Mock(side_effect=AssertionError("must not fall back"))
+            set_runtime_overrides(client_factory=lambda *args: client, account_loader=fake_account_loader)
+            result = self.registry.invoke("core.execute_connector", {"connector_name": "piece", "particles_count": 8})
+            self.assertFalse(result["ok"])
+            self.assertNotIn("data", result)
+            client.simulate_connector.assert_not_called()
+
+    def test_inspection_and_music_keep_envelope_provenance(self):
+        execution = FakeClient("https://example.invalid", 1).execute_connector(None, "piece", 8)
+        for name in ("inspect.group_execution_tree", "inspect.summarize_execution", "music.extract_note_events"):
+            result = self.registry.invoke(name, {"execution": execution})
+            self.assertTrue(result["ok"], result)
+            self.assertEqual(result["data"]["provenance"]["block_hash"], execution["block_hash"])
+
+    def test_create_transformation_and_condition_use_fake_client_and_account(self):
+        transformation = self.registry.invoke("core.create_transformation", {"payload": {"name": "xform"}})
+        condition = self.registry.invoke("core.create_condition", {"payload": {"name": "cond"}})
         self.assertTrue(transformation["ok"])
         self.assertTrue(condition["ok"])
         self.assertEqual(transformation["data"], {"name": "xform", "owner": "0xabc"})

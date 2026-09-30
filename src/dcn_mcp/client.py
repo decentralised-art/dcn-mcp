@@ -160,11 +160,13 @@ class DCNClient(LifecycleClientMixin):
         validate_request("POST_condition", payload)
         return self._handle_response(self._post_with_reauth(api_path("POST_condition"), payload, acct))
 
-    def _run_connector(self, operation_id, acct, connector_name, particles_count, dynamic_ri):
+    def _run_connector(self, operation_id, connector_name, particles_count, dynamic_ri):
         payload = {"connector_name": connector_name, "particles_count": int(particles_count),
                    "dynamic_ri": dynamic_ri or {}}
         validate_request(operation_id, payload)
-        response = self._post_with_reauth(api_path(operation_id), payload, acct)
+        response = self.session.post(
+            f"{self.base_url}{api_path(operation_id)}", json=payload, timeout=self.timeout,
+        )
         data = self._handle_response(response)
         if operation_id == "POST_execute" and not isinstance(data, dict):
             raise ValueError("/execute requires a block-anchored execution envelope")
@@ -174,15 +176,15 @@ class DCNClient(LifecycleClientMixin):
         validate_response(operation_id, data, getattr(response, "status_code", None))
         return data
 
-    def execute_connector(self, acct, connector_name: str, particles_count: int,
+    def execute_connector(self, connector_name: str, particles_count: int,
                           dynamic_ri=None) -> Dict[str, Any]:
         """Read the published connector on chain, preserving block provenance."""
-        return self._run_connector("POST_execute", acct, connector_name, particles_count, dynamic_ri)
+        return self._run_connector("POST_execute", connector_name, particles_count, dynamic_ri)
 
-    def simulate_connector(self, acct, connector_name: str, particles_count: int,
+    def simulate_connector(self, connector_name: str, particles_count: int,
                            dynamic_ri=None) -> List[Dict[str, Any]]:
         """Preview a local draft in the server simulation EVM; no publication."""
-        return self._run_connector("POST_simulate", acct, connector_name, particles_count, dynamic_ri)
+        return self._run_connector("POST_simulate", connector_name, particles_count, dynamic_ri)
 
     def list_formats(self, limit: int = 100, after: Optional[str] = None) -> Dict[str, Any]:
         params: Dict[str, Any] = {"limit": int(limit)}

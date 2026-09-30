@@ -65,23 +65,28 @@ LIMITS = {"max_fee_per_gas": 100, "max_total_fee": 2100000, "poll_interval": 0}
 class LifecycleTests(unittest.TestCase):
     def test_envelope_preserves_provenance_and_draft_route_uses_array(self):
         client = DCNClient("https://example.invalid/chain")
-        responses = iter([ENVELOPE, ENVELOPE["particles"]])
-        client._handle_response = lambda value: value
-        client._post_with_reauth = Mock(side_effect=lambda *args: next(responses))
-        envelope = client.execute_connector(Account(), "piece", 8)
+        client.ensure_auth = Mock(side_effect=AssertionError("execution must not authenticate"))
+        client.access_token = "unused-token"
+        responses = [SimpleNamespace(status_code=200, ok=True, json=lambda payload=payload: payload)
+                     for payload in (ENVELOPE, ENVELOPE["particles"])]
+        client.session.post = Mock(side_effect=responses)
+        envelope = client.execute_connector("piece", 8)
         self.assertIs(envelope, ENVELOPE)
         self.assertEqual(execution_particles(envelope), ENVELOPE["particles"])
-        self.assertEqual(client.simulate_connector(Account(), "piece", 8), ENVELOPE["particles"])
-        self.assertEqual([call.args[0] for call in client._post_with_reauth.call_args_list], ["/execute", "/simulate"])
+        self.assertEqual(client.simulate_connector("piece", 8), ENVELOPE["particles"])
+        self.assertEqual([call.args[0] for call in client.session.post.call_args_list],
+                         ["https://example.invalid/chain/execute", "https://example.invalid/chain/simulate"])
+        self.assertTrue(all("headers" not in call.kwargs for call in client.session.post.call_args_list))
+        client.ensure_auth.assert_not_called()
 
     def test_execute_rejects_legacy_array_and_missing_provenance(self):
         for value in ([], {"particles": []}, {**ENVELOPE, "block_number": True}, {**ENVELOPE, "runner": "0x0"}):
             with self.subTest(value=value):
                 client = DCNClient("https://example.invalid/chain")
                 client._handle_response = lambda value: value
-                client._post_with_reauth = lambda *args: value
+                client.session.post = Mock(return_value=value)
                 with self.assertRaises(ValueError):
-                    client.execute_connector(Account(), "piece", 8)
+                    client.execute_connector("piece", 8)
 
     def test_malformed_streams_fail_before_interpretation(self):
         for stream in ({"path": 1, "data": []}, {"path": "/pitch", "data": None},

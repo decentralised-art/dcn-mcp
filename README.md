@@ -59,19 +59,20 @@ It also exposes MCP resources such as:
 ## Drafts, publication and execution
 
 The chain client uses contracts generated from the pinned
-`submodules/dcn-api-spec` OpenAPI source (currently the same `8761ecb` commit
-used by `dcn-sdk`). Endpoint paths, query and create/publication request shapes,
-and execution/publication responses are checked against those contracts. The
-MCP tool schemas remain separate because they describe MCP inputs, not HTTP
+`submodules/dcn-api-spec` OpenAPI source (currently the same `c628d96` commit
+used by `dcn-sdk`). Endpoint paths, authentication requirements, query and
+create/publication request shapes, and execution/publication responses are
+checked against those contracts. MCP tool schemas describe MCP inputs, not HTTP
 requests. To update the API contract, update the submodule, run
 `python scripts/generate_api_contracts.py`, and run `make test`; CI checks that
 the committed generated file matches the pinned spec. The generated contract is
 packaged with the MCP server, so installed clients do not need the submodule.
 
 `core.create_*` creates local drafts. `core.simulate_connector` previews them
-without gas and returns `{particles, execution_mode: "simulation"}`.
+without login or gas and returns `{particles, execution_mode: "simulation"}`.
 `core.execute_connector` requires published entities and returns
-`{block_number, block_hash, runner, particles, execution_mode: "chain"}`.
+`{block_number, block_hash, runner, particles, execution_mode: "chain"}` without
+login or gas; the server makes a read-only call at its configured chain block.
 Pass the full chain result as `execution` to music/inspection tools to retain
 provenance. To inspect or render a simulation, pass its `particles` array as
 `samples`; this has no chain provenance.
@@ -166,7 +167,7 @@ DCN_ARTIFACT_ROOT = "/path/to/dcn-mcp/dcn-mcp-artifacts"
 Notes:
 - replace `/path/to/dcn-mcp` with the real absolute path where you cloned this repo
 - if you want live authenticated DCN actions, set `PRIVATE_KEY`
-- if you only want read/inspection operations, you can leave `PRIVATE_KEY` empty or omit it
+- reads, simulation, onchain execution, and inspection work without `PRIVATE_KEY`
 
 3. Restart Codex or start a fresh Codex session.
 
@@ -418,8 +419,8 @@ These are the main runtime settings:
 - `API_BASE`
   - default: `https://api.decentralised.art/chain`
 - `PRIVATE_KEY`
-  - optional for read-only inspection
-  - required for authenticated draft creation, simulation, publication and chain execution
+  - optional for reads, simulation, and chain execution
+  - required for authenticated draft creation and publication
   - signs the chain API nonce flow (`GET /chain/nonce/{address}` then `POST /chain/auth`)
   - this chain token is separate from the app/services SIWE session used by `hypermusic-backend`
 - `DCN_TIMEOUT`

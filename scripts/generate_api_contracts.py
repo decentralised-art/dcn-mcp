@@ -70,7 +70,8 @@ def json_schema(content: dict[str, Any], source: Path) -> dict[str, Any] | None:
 
 
 def operation_contract(path: str, method: str, operation: dict[str, Any],
-                       path_parameters: list[dict[str, Any]], source: Path) -> dict[str, Any]:
+                       path_parameters: list[dict[str, Any]], source: Path,
+                       default_security: list[dict[str, Any]]) -> dict[str, Any]:
     parameters = [*path_parameters, *operation.get("parameters", [])]
     query = [resolve(item, source) for item in parameters if item.get("in") == "query"]
     query_schema = {
@@ -92,6 +93,7 @@ def operation_contract(path: str, method: str, operation: dict[str, Any],
     return {
         "method": method.upper(),
         "path": path,
+        "security": operation.get("security", default_security),
         "query_schema": query_schema,
         "request_schema": json_schema(request_body.get("content", {}), source),
         "response_schemas": response_schemas,
@@ -115,7 +117,8 @@ def generate() -> str:
                 if operation_id in contracts:
                     raise ValueError(f"Duplicate OpenAPI operation: {operation_id}")
                 contracts[operation_id] = operation_contract(
-                    path, method, operation, path_item.get("parameters", []), source)
+                    path, method, operation, path_item.get("parameters", []), source,
+                    document.get("security", []))
     missing = OPERATIONS - contracts.keys()
     if missing:
         raise ValueError(f"Missing OpenAPI operations: {', '.join(sorted(missing))}")

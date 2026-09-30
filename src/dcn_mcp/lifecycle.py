@@ -178,10 +178,7 @@ class LifecycleClientMixin:
             "nonce": _quantity(signing.get("nonce"), "nonce"), "gas": gas,
             "maxFeePerGas": fee, "maxPriorityFeePerGas": tip, "value": 0,
         })
-        raw_bytes = getattr(signed, "raw_transaction", None)
-        if raw_bytes is None:  # eth-account 0.11 uses camelCase.
-            raw_bytes = signed.rawTransaction
-        raw = "0x" + bytes(raw_bytes).hex()
+        raw = "0x" + bytes(signed.raw_transaction).hex()
         tx_hash = "0x" + bytes(signed.hash).hex()
         pending = {"status": "pending", "kind": kind, "name": name,
                    "content_hash": prepared["content_hash"], "tx_hash": tx_hash}

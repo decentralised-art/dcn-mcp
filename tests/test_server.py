@@ -21,6 +21,8 @@ class ServerTests(unittest.TestCase):
             "confirm_publication", "execute_connector",
         ):
             self.assertIn(f"core.{name}", tool_names)
+        for kind in ("connector", "transformation", "condition"):
+            self.assertNotIn(f"core.deploy_{kind}", tool_names)
         self.assertIn("inspect.summarize_execution", tool_names)
         self.assertIn("music.extract_note_events", tool_names)
         self.assertNotIn("music.build_parent_connector", tool_names)

@@ -153,22 +153,27 @@ class CoreIntegrationTests(unittest.TestCase):
     def test_execute_connector_uses_fake_client_and_account(self):
         result = self.registry.invoke("core.execute_connector", {"connector_name": "piece", "particles_count": 8})
         self.assertTrue(result["ok"])
-        self.assertEqual(result["data"]["samples"][0]["data"], [60])
+        self.assertEqual(result["data"]["particles"][0]["data"], [60])
+        self.assertNotIn("samples", result["data"])
         self.assertEqual(result["data"]["block_number"], 42)
         self.assertEqual(result["data"]["execution_mode"], "chain")
 
-    def test_create_aliases_and_simulation_never_publish(self):
+    def test_creation_and_simulation_never_publish(self):
         client = FakeClient("https://example.invalid", 1)
         client.publish = Mock(side_effect=AssertionError("draft must not spend gas"))
         set_runtime_overrides(client_factory=lambda *args: client, account_loader=fake_account_loader)
         for kind in ("connector", "transformation", "condition"):
-            for prefix in ("create", "deploy"):
-                result = self.registry.invoke(f"core.{prefix}_{kind}", {"payload": {"name": "draft"}})
-                self.assertTrue(result["ok"])
+            result = self.registry.invoke(f"core.create_{kind}", {"payload": {"name": "draft"}})
+            self.assertTrue(result["ok"])
         result = self.registry.invoke("core.simulate_connector", {"connector_name": "draft", "particles_count": 8})
         self.assertEqual(result["data"]["execution_mode"], "simulation")
         self.assertNotIn("block_hash", result["data"])
+        self.assertNotIn("samples", result["data"])
         client.publish.assert_not_called()
+        for name in ("inspect.group_execution_tree", "inspect.summarize_execution", "music.extract_note_events"):
+            inspected = self.registry.invoke(name, {"samples": result["data"]["particles"]})
+            self.assertTrue(inspected["ok"], inspected)
+            self.assertIsNone(inspected["data"]["provenance"])
 
     def test_execute_not_yet_at_safe_block_never_substitutes_simulation(self):
         import requests
@@ -191,9 +196,9 @@ class CoreIntegrationTests(unittest.TestCase):
             self.assertTrue(result["ok"], result)
             self.assertEqual(result["data"]["provenance"]["block_hash"], execution["block_hash"])
 
-    def test_deploy_transformation_and_condition_use_fake_client_and_account(self):
-        transformation = self.registry.invoke("core.deploy_transformation", {"payload": {"name": "xform"}})
-        condition = self.registry.invoke("core.deploy_condition", {"payload": {"name": "cond"}})
+    def test_create_transformation_and_condition_use_fake_client_and_account(self):
+        transformation = self.registry.invoke("core.create_transformation", {"payload": {"name": "xform"}})
+        condition = self.registry.invoke("core.create_condition", {"payload": {"name": "cond"}})
         self.assertTrue(transformation["ok"])
         self.assertTrue(condition["ok"])
         self.assertEqual(transformation["data"], {"name": "xform", "owner": "0xabc"})

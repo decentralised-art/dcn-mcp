@@ -276,7 +276,7 @@ class PTDVMusicAdapter(FormatAdapter):
         @registry.tool(
             namespace="music",
             name="extract_note_events",
-            description="Extract PTDV note events from execution samples.",
+            description="Extract PTDV note events. Pass a full chain result as execution to retain provenance, or a simulation's particles array as samples.",
             input_schema=object_schema({"samples": array_schema(), "execution": object_schema()}),
         )
         def _extract(params: Dict[str, Any]) -> Dict[str, Any]:

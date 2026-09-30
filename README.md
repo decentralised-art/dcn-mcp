@@ -59,11 +59,13 @@ It also exposes MCP resources such as:
 ## Drafts, publication and execution
 
 `core.create_*` creates local drafts. `core.simulate_connector` previews them
-without gas. Deprecated `core.deploy_*` names remain draft-only aliases.
+without gas and returns `{particles, execution_mode: "simulation"}`.
 `core.execute_connector` requires published entities and returns
-`{block_number, block_hash, runner, particles}` plus a compatibility `samples`
-alias. Pass the full result as `execution` to music/inspection tools to retain
-provenance. Transformation and condition detail responses use `args_count`;
+`{block_number, block_hash, runner, particles, execution_mode: "chain"}`.
+Pass the full chain result as `execution` to music/inspection tools to retain
+provenance. To inspect or render a simulation, pass its `particles` array as
+`samples`; this has no chain provenance.
+Transformation and condition detail responses use `args_count`;
 Solidity source is no longer part of runtime details.
 
 Publication is explicit and owner-paid. First inspect `core.prepare_publication`,
@@ -575,7 +577,7 @@ or
 ### 1. `core`
 
 - format-agnostic DCN operations
-- deploy, fetch, execute, inspect, naming, artifacts
+- create drafts, simulate, publish, fetch, execute, inspect, naming, artifacts
 - no music assumptions
 
 ### 2. `adapters`

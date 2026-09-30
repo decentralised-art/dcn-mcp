@@ -229,40 +229,33 @@ def register(registry) -> None:
 
     @registry.tool(
         namespace="core",
-        name="deploy_connector",
-        description="Deprecated alias of create_connector: creates a server-local draft; never publishes or spends gas.",
+        name="create_connector",
+        description="Create a server-local connector draft. Does not publish or spend gas.",
         input_schema=object_schema({"payload": object_schema(), "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["payload"]),
     )
-    def _deploy_connector(params: Dict[str, Any]) -> Dict[str, Any]:
+    def _create_connector(params: Dict[str, Any]) -> Dict[str, Any]:
         with context_from_params(params) as ctx:
             return ctx.client().post_connector(dict(params["payload"]), ctx.account())
 
     @registry.tool(
         namespace="core",
-        name="deploy_transformation",
-        description="Deprecated alias of create_transformation: creates a server-local draft; never publishes or spends gas.",
+        name="create_transformation",
+        description="Create a server-local transformation draft. Does not publish or spend gas.",
         input_schema=object_schema({"payload": object_schema(), "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["payload"]),
     )
-    def _deploy_transformation(params: Dict[str, Any]) -> Dict[str, Any]:
+    def _create_transformation(params: Dict[str, Any]) -> Dict[str, Any]:
         with context_from_params(params) as ctx:
             return ctx.client().post_transformation(dict(params["payload"]), ctx.account())
 
     @registry.tool(
         namespace="core",
-        name="deploy_condition",
-        description="Deprecated alias of create_condition: creates a server-local draft; never publishes or spends gas.",
+        name="create_condition",
+        description="Create a server-local condition draft. Does not publish or spend gas.",
         input_schema=object_schema({"payload": object_schema(), "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["payload"]),
     )
-    def _deploy_condition(params: Dict[str, Any]) -> Dict[str, Any]:
+    def _create_condition(params: Dict[str, Any]) -> Dict[str, Any]:
         with context_from_params(params) as ctx:
             return ctx.client().post_condition(dict(params["payload"]), ctx.account())
-
-    for kind, handler in (("connector", _deploy_connector), ("transformation", _deploy_transformation), ("condition", _deploy_condition)):
-        registry.tool(
-            namespace="core", name=f"create_{kind}",
-            description=f"Create a server-local {kind} draft. Does not publish or spend gas.",
-            input_schema=object_schema({"payload": object_schema(), "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["payload"]),
-        )(handler)
 
     @registry.tool(
         namespace="core", name="simulate_connector",
@@ -274,7 +267,7 @@ def register(registry) -> None:
     def _simulate(params):
         with context_from_params(params) as ctx:
             particles = ctx.client().simulate_connector(ctx.account(), str(params["connector_name"]), int(params["particles_count"]), dict(params.get("dynamic_ri") or {}))
-            return {"particles": particles, "samples": particles, "execution_mode": "simulation"}
+            return {"particles": particles, "execution_mode": "simulation"}
 
     publication_schema = {"kind": string_schema(min_length=1), "name": string_schema(min_length=1),
         "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}
@@ -311,7 +304,7 @@ def register(registry) -> None:
     @registry.tool(
         namespace="core",
         name="execute_connector",
-        description="Execute a published connector on chain and return particles with block_number, block_hash and runner provenance; samples is a compatibility alias.",
+        description="Execute a published connector on chain and return particles with block_number, block_hash and runner provenance.",
         input_schema=object_schema(
             {
                 "connector_name": string_schema(min_length=1),
@@ -327,13 +320,13 @@ def register(registry) -> None:
     def _execute_connector(params: Dict[str, Any]) -> Dict[str, Any]:
         dynamic_ri = params["dynamic_ri"] if "dynamic_ri" in params and params["dynamic_ri"] is not None else {}
         with context_from_params(params) as ctx:
-            samples = ctx.client().execute_connector(
+            execution = ctx.client().execute_connector(
                 ctx.account(),
                 connector_name=str(params["connector_name"]),
                 particles_count=int(params["particles_count"]),
                 dynamic_ri=dict(dynamic_ri),
             )
-            return {**samples, "samples": samples["particles"], "execution_mode": "chain"}
+            return {**execution, "execution_mode": "chain"}
 
     @registry.tool(
         namespace="core",

@@ -10,7 +10,7 @@ def register(registry) -> None:
     @registry.tool(
         namespace="inspect",
         name="group_execution_tree",
-        description="Group raw execute samples by parent path and leaf name.",
+        description="Group particle streams by parent path and leaf name. Pass a full chain result as execution to retain provenance, or a simulation's particles array as samples.",
         input_schema={"type": "object", "properties": {"samples": {"type": "array"}, "execution": {"type": "object"}}},
     )
     def _group(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -20,7 +20,7 @@ def register(registry) -> None:
     @registry.tool(
         namespace="inspect",
         name="summarize_execution",
-        description="Summarize raw execute samples without assuming a specific format family.",
+        description="Summarize particle streams without assuming a format family. Pass a full chain result as execution to retain provenance, or a simulation's particles array as samples.",
         input_schema={"type": "object", "properties": {"samples": {"type": "array"}, "execution": {"type": "object"}}},
     )
     def _summarize(params: Dict[str, Any]) -> Dict[str, Any]:

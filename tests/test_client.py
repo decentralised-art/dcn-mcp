@@ -46,10 +46,11 @@ class ClientTests(unittest.TestCase):
         session = FakeSession()
         client.session = session
 
-        client.list_formats(limit=10, after="abc&limit=999")
+        cursor = "ab" * 32
+        client.list_formats(limit=10, after=cursor)
 
         self.assertEqual(session.calls[0][1], "https://api.example/chain/formats")
-        self.assertEqual(session.calls[0][2]["params"], {"limit": 10, "after": "abc&limit=999"})
+        self.assertEqual(session.calls[0][2]["params"], {"limit": 10, "after": cursor})
 
     def test_path_segments_are_url_encoded(self):
         client = DCNClient("https://api.example/chain")

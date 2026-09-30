@@ -58,6 +58,16 @@ It also exposes MCP resources such as:
 
 ## Drafts, publication and execution
 
+The chain client uses contracts generated from the pinned
+`submodules/dcn-api-spec` OpenAPI source (currently the same `8761ecb` commit
+used by `dcn-sdk`). Endpoint paths, query and create/publication request shapes,
+and execution/publication responses are checked against those contracts. The
+MCP tool schemas remain separate because they describe MCP inputs, not HTTP
+requests. To update the API contract, update the submodule, run
+`python scripts/generate_api_contracts.py`, and run `make test`; CI checks that
+the committed generated file matches the pinned spec. The generated contract is
+packaged with the MCP server, so installed clients do not need the submodule.
+
 `core.create_*` creates local drafts. `core.simulate_connector` previews them
 without gas and returns `{particles, execution_mode: "simulation"}`.
 `core.execute_connector` requires published entities and returns

@@ -14,6 +14,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from .api_contracts import api_path, validate_request, validate_response
+
 SEPOLIA_CHAIN_ID = 11155111
 KINDS = {"connector", "transformation", "condition"}
 
@@ -105,16 +107,28 @@ class LifecycleClientMixin:
     def _publication_post(self, kind, suffix, payload, acct, *, broadcast=False):
         if kind not in KINDS:
             raise ValueError("kind must be connector, transformation or condition")
-        path = f"/publish/{kind}{suffix}"
+        operation_id = {
+            "/prepare": "POST_publishPrepare",
+            "/send": "POST_publishSend",
+            "": "POST_publishConfirm",
+        }[suffix]
+        validate_request(operation_id, payload)
+        path = api_path(operation_id, kind=kind)
         if not broadcast:
-            return self._handle_response(self._post_with_reauth(path, payload, acct))
+            response = self._post_with_reauth(path, payload, acct)
+            result = self._handle_response(response)
+            validate_response(operation_id, result, getattr(response, "status_code", None))
+            return result
         # Broadcast must never be retried automatically, including after an HTTP
         # timeout. The signed transaction hash can be used to reconcile the result.
         self.ensure_auth(acct)
-        return self._handle_response(self.session.post(
+        response = self.session.post(
             f"{self.base_url}{path}", json=payload,
             headers=self._authz_headers(), timeout=self.timeout,
-        ))
+        )
+        result = self._handle_response(response)
+        validate_response(operation_id, result, getattr(response, "status_code", None))
+        return result
 
     def publish_prepare(self, acct, kind: str, name: str):
         return self._publication_post(kind, "/prepare", {"name": name, "relay": True}, acct)

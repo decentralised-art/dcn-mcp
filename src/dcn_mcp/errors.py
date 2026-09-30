@@ -59,7 +59,7 @@ def error_to_payload(exc: Exception) -> Dict[str, Any]:
         for key in ("missing", "mismatched"):
             if isinstance(body.get(key), list):
                 details[key] = body[key]
-        return {"code": "http_error", "message": str(body.get("message") or "DCN request failed"), "details": details}
+        return {"code": "http_error", "message": str(body.get("message") or "decentralised.art request failed"), "details": details}
     if isinstance(exc, DCNMCPError):
         return exc.to_payload()
     return InternalToolError(

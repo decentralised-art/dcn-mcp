@@ -25,12 +25,12 @@ def build_manifest() -> dict:
     return {
         "manifest_version": MANIFEST_VERSION,
         "name": BUNDLE_NAME,
-        "display_name": "DCN MCP",
+        "display_name": "decentralised.art MCP",
         "version": __version__,
-        "description": "General MCP server for the Decentralized Creative Network (DCN).",
-        "long_description": "Core DCN operations for local drafts, simulation, network publication, onchain execution, and discovery.",
+        "description": "Core MCP server for decentralised.art.",
+        "long_description": "Core decentralised.art operations for local drafts, simulation, network publication, onchain execution, and discovery.",
         "author": {
-            "name": "dcn-mcp maintainers",
+            "name": "decentralised.art maintainers",
         },
         "server": {
             "type": "uv",
@@ -62,7 +62,7 @@ def build_manifest() -> dict:
         "keywords": [
             "dcn",
             "mcp",
-            "creative-network",
+            "decentralised.art",
             "format-agnostic",
         ],
         "compatibility": {
@@ -75,23 +75,23 @@ def build_manifest() -> dict:
         "user_config": {
             "api_base": {
                 "type": "string",
-                "title": "DCN API Base URL",
-                "description": "Base URL for the DCN API.",
+                "title": "decentralised.art API Base URL",
+                "description": "Base URL for the decentralised.art API.",
                 "default": "https://api.decentralised.art/chain",
                 "required": True,
             },
             "private_key": {
                 "type": "string",
                 "title": "Private Key",
-                "description": "Optional Ethereum private key for authenticated DCN operations.",
+                "description": "Optional Ethereum private key for authenticated decentralised.art operations.",
                 "sensitive": True,
                 "required": False,
                 "default": "",
             },
             "dcn_timeout": {
                 "type": "number",
-                "title": "DCN Timeout (seconds)",
-                "description": "HTTP timeout used for DCN API requests.",
+                "title": "API Timeout (seconds)",
+                "description": "HTTP timeout used for decentralised.art API requests.",
                 "default": 15,
                 "min": 1,
                 "max": 120,
@@ -149,7 +149,7 @@ def build_bundle(output_dir: Path = DEFAULT_OUTPUT_DIR) -> Path:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build a Claude Desktop .mcpb bundle for dcn-mcp")
+    parser = argparse.ArgumentParser(description="Build a Claude Desktop .mcpb bundle for decentralised.art")
     parser.add_argument(
         "--output-dir",
         default=str(DEFAULT_OUTPUT_DIR),

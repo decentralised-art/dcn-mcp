@@ -69,7 +69,7 @@ def register(registry) -> None:
     @registry.tool(
         namespace="core",
         name="connector_exists",
-        description="Check whether a connector exists on the DCN.",
+        description="Check whether a connector exists on decentralised.art.",
         input_schema=object_schema({"name": string_schema(min_length=1), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["name"]),
     )
     def _connector_exists(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -119,7 +119,7 @@ def register(registry) -> None:
     @registry.tool(
         namespace="core",
         name="transformation_exists",
-        description="Check whether a transformation exists on the DCN.",
+        description="Check whether a transformation exists on decentralised.art.",
         input_schema=object_schema({"name": string_schema(min_length=1), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["name"]),
     )
     def _transformation_exists(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -129,7 +129,7 @@ def register(registry) -> None:
     @registry.tool(
         namespace="core",
         name="condition_exists",
-        description="Check whether a condition exists on the DCN.",
+        description="Check whether a condition exists on decentralised.art.",
         input_schema=object_schema({"name": string_schema(min_length=1), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}, required=["name"]),
     )
     def _condition_exists(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -139,7 +139,7 @@ def register(registry) -> None:
     @registry.tool(
         namespace="core",
         name="get_feed_page",
-        description="Fetch a page from the DCN event feed.",
+        description="Fetch a page from the decentralised.art event feed.",
         input_schema=object_schema(
             {
                 "limit": PAGE_LIMIT_SCHEMA,
@@ -163,7 +163,7 @@ def register(registry) -> None:
     @registry.tool(
         namespace="core",
         name="get_feed_stream_replay",
-        description="Read a bounded replay from the DCN event feed SSE stream.",
+        description="Read a bounded replay from the decentralised.art event feed SSE stream.",
         input_schema=object_schema(
             {
                 "since_seq": integer_schema(minimum=0),
@@ -183,7 +183,7 @@ def register(registry) -> None:
     @registry.tool(
         namespace="core",
         name="list_formats",
-        description="List formats known to the DCN.",
+        description="List formats known to decentralised.art.",
         input_schema=object_schema({"limit": PAGE_LIMIT_SCHEMA, "after": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA}),
     )
     def _list_formats(params: Dict[str, Any]) -> Dict[str, Any]:

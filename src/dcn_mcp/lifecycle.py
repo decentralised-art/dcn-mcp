@@ -1,4 +1,4 @@
-"""Current DCN draft, simulation and owner-paid publication contract.
+"""Current decentralised.art draft, simulation and owner-paid publication contract.
 
 This module deliberately needs no RPC provider: the owner's account signs locally
 and the authenticated server relays a single EIP-1559 transaction.

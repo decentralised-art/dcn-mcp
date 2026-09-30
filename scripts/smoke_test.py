@@ -32,7 +32,7 @@ def main() -> None:
     run([python, "-m", "dcn_mcp.server", "list-resources"], quiet=True)
     payload = json.dumps({"name": "piece", "child_names": ["a", "b"]})
     run([python, "-m", "dcn_mcp.server", "invoke", "core.build_parent_connector", payload], quiet=True)
-    print("dcn-mcp smoke test passed")
+    print("decentralised.art MCP smoke test passed")
 
 
 if __name__ == "__main__":

@@ -259,14 +259,14 @@ def register(registry) -> None:
 
     @registry.tool(
         namespace="core", name="simulate_connector",
-        description="Simulate a connector draft locally on the server; returns particles without chain provenance or publication.",
+        description="Simulate a connector draft locally on the server without login; returns particles without chain provenance or publication.",
         input_schema=object_schema({"connector_name": string_schema(min_length=1), "particles_count": PARTICLES_COUNT_SCHEMA,
-            "dynamic_ri": object_schema(), "private_key": string_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA},
+            "dynamic_ri": object_schema(), "api_base": string_schema(), "timeout": TIMEOUT_SCHEMA},
             required=["connector_name", "particles_count"]),
     )
     def _simulate(params):
         with context_from_params(params) as ctx:
-            particles = ctx.client().simulate_connector(ctx.account(), str(params["connector_name"]), int(params["particles_count"]), dict(params.get("dynamic_ri") or {}))
+            particles = ctx.client().simulate_connector(str(params["connector_name"]), int(params["particles_count"]), dict(params.get("dynamic_ri") or {}))
             return {"particles": particles, "execution_mode": "simulation"}
 
     publication_schema = {"kind": string_schema(min_length=1), "name": string_schema(min_length=1),
@@ -304,13 +304,12 @@ def register(registry) -> None:
     @registry.tool(
         namespace="core",
         name="execute_connector",
-        description="Execute a published connector on chain and return particles with block_number, block_hash and runner provenance.",
+        description="Read a published connector from the chain runner without login or gas and return particles with block_number, block_hash and runner provenance.",
         input_schema=object_schema(
             {
                 "connector_name": string_schema(min_length=1),
                 "particles_count": PARTICLES_COUNT_SCHEMA,
                 "dynamic_ri": object_schema(),
-                "private_key": string_schema(),
                 "api_base": string_schema(),
                 "timeout": TIMEOUT_SCHEMA,
             },
@@ -321,7 +320,6 @@ def register(registry) -> None:
         dynamic_ri = params["dynamic_ri"] if "dynamic_ri" in params and params["dynamic_ri"] is not None else {}
         with context_from_params(params) as ctx:
             execution = ctx.client().execute_connector(
-                ctx.account(),
                 connector_name=str(params["connector_name"]),
                 particles_count=int(params["particles_count"]),
                 dynamic_ri=dict(dynamic_ri),

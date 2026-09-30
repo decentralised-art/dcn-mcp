@@ -25,6 +25,11 @@ def spec_commit() -> str:
     return str(_document()["spec_commit"])
 
 
+def requires_auth(operation_id: str) -> bool:
+    alternatives = _operation(operation_id)["security"]
+    return bool(alternatives) and all(bool(requirement) for requirement in alternatives)
+
+
 def _operation(operation_id: str) -> dict[str, Any]:
     try:
         return _document()["operations"][operation_id]

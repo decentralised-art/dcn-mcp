@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import requests
 
-from dcn_mcp.api_contracts import api_path, spec_commit, validate_query, validate_response
+from dcn_mcp.api_contracts import api_path, requires_auth, spec_commit, validate_query, validate_response
 from dcn_mcp.client import DCNClient
 from dcn_mcp.errors import ValidationError
 
@@ -13,6 +13,12 @@ class ApiContractsTests(unittest.TestCase):
         self.assertEqual(api_path("GET_format", hash="abc/def"), "/format/abc%2Fdef")
         self.assertEqual(api_path("POST_publishPrepare", kind="connector"), "/publish/connector/prepare")
         self.assertEqual(len(spec_commit()), 40)
+
+    def test_spec_marks_execution_public_and_creation_authenticated(self):
+        self.assertFalse(requires_auth("POST_execute"))
+        self.assertFalse(requires_auth("POST_simulate"))
+        self.assertTrue(requires_auth("POST_connector"))
+        self.assertTrue(requires_auth("POST_publishPrepare"))
 
     def test_create_request_rejects_missing_spec_fields_before_http(self):
         client = DCNClient("https://api.example/chain")

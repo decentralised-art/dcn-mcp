@@ -86,10 +86,10 @@ class FakeClient:
     def post_condition(self, payload, acct):
         return {"name": payload.get("name"), "owner": acct.address}
 
-    def simulate_connector(self, acct, connector_name, particles_count, dynamic_ri=None):
+    def simulate_connector(self, connector_name, particles_count, dynamic_ri=None):
         return [{"path": "/cell:0/pitch:0", "data": [60]}]
 
-    def execute_connector(self, acct, connector_name, particles_count, dynamic_ri=None):
+    def execute_connector(self, connector_name, particles_count, dynamic_ri=None):
         return {"block_number": 42, "block_hash": "0x" + "ab" * 32, "runner": "0x" + "12" * 20, "particles": [{"path": "/cell:0/pitch:0", "data": [60]}]}
 
 
@@ -150,13 +150,19 @@ class CoreIntegrationTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertEqual(result["error"]["code"], "validation_error")
 
-    def test_execute_connector_uses_fake_client_and_account(self):
+    def test_execute_and_simulate_need_no_account(self):
+        account_loader = Mock(side_effect=AssertionError("execution must not load a private key"))
+        set_runtime_overrides(client_factory=lambda api_base, timeout: FakeClient(api_base, timeout), account_loader=account_loader)
         result = self.registry.invoke("core.execute_connector", {"connector_name": "piece", "particles_count": 8})
         self.assertTrue(result["ok"])
         self.assertEqual(result["data"]["particles"][0]["data"], [60])
         self.assertNotIn("samples", result["data"])
         self.assertEqual(result["data"]["block_number"], 42)
         self.assertEqual(result["data"]["execution_mode"], "chain")
+        simulated = self.registry.invoke("core.simulate_connector", {"connector_name": "draft", "particles_count": 8})
+        self.assertTrue(simulated["ok"])
+        self.assertEqual(simulated["data"]["execution_mode"], "simulation")
+        account_loader.assert_not_called()
 
     def test_creation_and_simulation_never_publish(self):
         client = FakeClient("https://example.invalid", 1)
@@ -190,7 +196,7 @@ class CoreIntegrationTests(unittest.TestCase):
             client.simulate_connector.assert_not_called()
 
     def test_inspection_and_music_keep_envelope_provenance(self):
-        execution = FakeClient("https://example.invalid", 1).execute_connector(None, "piece", 8)
+        execution = FakeClient("https://example.invalid", 1).execute_connector("piece", 8)
         for name in ("inspect.group_execution_tree", "inspect.summarize_execution", "music.extract_note_events"):
             result = self.registry.invoke(name, {"execution": execution})
             self.assertTrue(result["ok"], result)

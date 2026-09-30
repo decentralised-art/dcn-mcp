@@ -142,7 +142,8 @@
           "title": "AccountInfoResponse",
           "type": "object"
         }
-      }
+      },
+      "security": []
     },
     "GET_condition": {
       "method": "GET",
@@ -189,7 +190,8 @@
           "title": "ConditionInfoResponse",
           "type": "object"
         }
-      }
+      },
+      "security": []
     },
     "GET_connector": {
       "method": "GET",
@@ -329,7 +331,8 @@
           "title": "ConnectorInfoResponse",
           "type": "object"
         }
-      }
+      },
+      "security": []
     },
     "GET_feed": {
       "method": "GET",
@@ -541,7 +544,8 @@
           "title": "FeedPage",
           "type": "object"
         }
-      }
+      },
+      "security": []
     },
     "GET_feedStream": {
       "method": "GET",
@@ -566,7 +570,8 @@
         "type": "object"
       },
       "request_schema": null,
-      "response_schemas": {}
+      "response_schemas": {},
+      "security": []
     },
     "GET_format": {
       "method": "GET",
@@ -658,7 +663,8 @@
           "title": "FormatInfoResponse",
           "type": "object"
         }
-      }
+      },
+      "security": []
     },
     "GET_formats": {
       "method": "GET",
@@ -740,7 +746,8 @@
           "title": "FormatListResponse",
           "type": "object"
         }
-      }
+      },
+      "security": []
     },
     "GET_nonce": {
       "method": "GET",
@@ -768,7 +775,8 @@
           "title": "NonceResponse",
           "type": "object"
         }
-      }
+      },
+      "security": []
     },
     "GET_transformation": {
       "method": "GET",
@@ -815,7 +823,8 @@
           "title": "TransformationInfoResponse",
           "type": "object"
         }
-      }
+      },
+      "security": []
     },
     "GET_version": {
       "method": "GET",
@@ -850,7 +859,8 @@
           "title": "VersionResponse",
           "type": "object"
         }
-      }
+      },
+      "security": []
     },
     "POST_auth": {
       "method": "POST",
@@ -904,7 +914,8 @@
           "title": "AuthResponse",
           "type": "object"
         }
-      }
+      },
+      "security": []
     },
     "POST_condition": {
       "method": "POST",
@@ -974,7 +985,12 @@
           "title": "CreateConditionResponse",
           "type": "object"
         }
-      }
+      },
+      "security": [
+        {
+          "BearerAuth": []
+        }
+      ]
     },
     "POST_connector": {
       "method": "POST",
@@ -1130,7 +1146,12 @@
           "title": "CreateConnectorResponse",
           "type": "object"
         }
-      }
+      },
+      "security": [
+        {
+          "BearerAuth": []
+        }
+      ]
     },
     "POST_execute": {
       "method": "POST",
@@ -1255,7 +1276,8 @@
           "title": "ExecuteResponse",
           "type": "object"
         }
-      }
+      },
+      "security": []
     },
     "POST_publishConfirm": {
       "method": "POST",
@@ -1404,7 +1426,12 @@
           "title": "PublishError",
           "type": "object"
         }
-      }
+      },
+      "security": [
+        {
+          "BearerAuth": []
+        }
+      ]
     },
     "POST_publishPrepare": {
       "method": "POST",
@@ -1657,7 +1684,12 @@
           ],
           "title": "PrepareResponse"
         }
-      }
+      },
+      "security": [
+        {
+          "BearerAuth": []
+        }
+      ]
     },
     "POST_publishSend": {
       "method": "POST",
@@ -1722,7 +1754,12 @@
           "title": "SendResponse",
           "type": "object"
         }
-      }
+      },
+      "security": [
+        {
+          "BearerAuth": []
+        }
+      ]
     },
     "POST_simulate": {
       "method": "POST",
@@ -1820,7 +1857,8 @@
           "title": "SimulateResponse",
           "type": "array"
         }
-      }
+      },
+      "security": []
     },
     "POST_transformation": {
       "method": "POST",
@@ -1890,8 +1928,13 @@
           "title": "CreateTransformationResponse",
           "type": "object"
         }
-      }
+      },
+      "security": [
+        {
+          "BearerAuth": []
+        }
+      ]
     }
   },
-  "spec_commit": "8761ecb57983dc33c36e271defec2123c26dfb0e"
+  "spec_commit": "c628d96b3b69e81c65c7ab7d74e00b0555cd846d"
 }

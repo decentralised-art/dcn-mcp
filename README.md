@@ -1,13 +1,7 @@
 # dcn-mcp
 
-`dcn-mcp` is a general MCP server for the Decentralized Creative Network (DCN).
-
-It exposes:
-
-- a format-agnostic DCN core
-- generic execution inspection tools
-- specialist adapters on top of the core
-- PTDV/music as the first specialist adapter
+`dcn-mcp` is the core MCP server for the Decentralized Creative Network (DCN).
+It exposes format-agnostic protocol operations under the `core.*` namespace.
 
 If you are a user of this repo, the important question is simple:
 
@@ -42,19 +36,10 @@ When `dcn-mcp` is running, an MCP host can use tools such as:
 - `core.execute_connector`
 - `core.ensure_preflight`
 - `core.build_parent_connector`
-- `inspect.group_execution_tree`
-- `inspect.summarize_execution`
-- `music.extract_note_events`
-- `music.summarize_note_events`
-- `music.build_wrapper_connector`
-- `music.build_player_payload`
 
-It also exposes MCP resources such as:
+It also exposes the MCP resource:
 
 - `core.dcn_core_primer`
-- `music.ptdv_music_workflow`
-- `music.register_maps`
-- `music.score_position_schema_workflow`
 
 ## Drafts, publication and execution
 
@@ -73,9 +58,8 @@ without login or gas and returns `{particles, execution_mode: "simulation"}`.
 `core.execute_connector` requires published entities and returns
 `{block_number, block_hash, runner, particles, execution_mode: "chain"}` without
 login or gas; the server makes a read-only call at its configured chain block.
-Pass the full chain result as `execution` to music/inspection tools to retain
-provenance. To inspect or render a simulation, pass its `particles` array as
-`samples`; this has no chain provenance.
+Keep the full chain result when using its particles so the block and runner
+provenance is retained. Simulation returns only particles and has no chain provenance.
 Transformation and condition detail responses use `args_count`;
 Solidity source is no longer part of runtime details.
 
@@ -167,7 +151,7 @@ DCN_ARTIFACT_ROOT = "/path/to/dcn-mcp/dcn-mcp-artifacts"
 Notes:
 - replace `/path/to/dcn-mcp` with the real absolute path where you cloned this repo
 - if you want live authenticated DCN actions, set `PRIVATE_KEY`
-- reads, simulation, onchain execution, and inspection work without `PRIVATE_KEY`
+- reads, simulation, and onchain execution work without `PRIVATE_KEY`
 
 3. Restart Codex or start a fresh Codex session.
 
@@ -426,7 +410,7 @@ These are the main runtime settings:
 - `DCN_TIMEOUT`
   - request timeout in seconds
 - `DCN_ARTIFACT_ROOT`
-  - directory where artifact-writing tools are allowed to create files
+  - directory for persistent publication transaction records
   - default: `dcn-mcp-artifacts`
 
 ## Verify That It Actually Works
@@ -444,7 +428,7 @@ python -m unittest discover -s tests -v
 Important test coverage includes:
 
 - registry and schema validation
-- resource exposure
+- core resource exposure
 - fake-client integration for core tools
 - real MCP stdio lifecycle smoke test
 
@@ -499,10 +483,6 @@ Lists local tool metadata.
 
 Lists local resource metadata.
 
-### `make list-adapters`
-
-Lists registered adapters.
-
 ### `make read-core-primer`
 
 Reads the core primer resource.
@@ -529,7 +509,7 @@ Builds a Claude Desktop `.mcpb` bundle in `dist/`.
 
 ### `./scripts/smoke_test.sh`
 
-Runs the repo test suite and a couple of local inspection checks.
+Runs the repo test suite and local MCP checks.
 
 ## CLI Commands
 
@@ -543,12 +523,6 @@ List tools:
 
 ```bash
 python -m dcn_mcp.server list-tools
-```
-
-List adapters:
-
-```bash
-python -m dcn_mcp.server list-adapters
 ```
 
 List resources:
@@ -583,32 +557,15 @@ or
 
 ## Architecture
 
-`dcn-mcp` is split into three layers.
-
-### 1. `core`
-
-- format-agnostic DCN operations
-- create drafts, simulate, publish, fetch, execute, inspect, naming, artifacts
-- no music assumptions
-
-### 2. `adapters`
-
-- format-family semantics
-- PTDV/music is the first specialist adapter
-- more adapters can be added later for other formats or multi-format workflows
-
-### 3. `tools`
-
-- transport-independent tool definitions and schemas
-- these are the capabilities the MCP transport exposes
+The HTTP client implements the DCN protocol using contracts generated from
+`dcn-api-spec`. The MCP server exposes those operations as `core.*` tools and a
+core primer resource. Format-specific interpretation and general file-writing
+belong in separate plugins.
 
 ## Architecture Boundary
 
-- `core.*` tools are general DCN operations.
-- `inspect.*` tools are generic execution-tree inspection.
-- `music.*` tools come from the PTDV/music adapter.
-- resources expose compositional and protocol knowledge without baking it into the core runtime.
-- generic structural helpers such as parent connector building belong in `core`, not in format-specific adapters.
+- The official server exposes only `core.*` tools and the core primer resource.
+- Generic structural helpers such as parent connector building remain in `core`.
 
 ## Pagination
 

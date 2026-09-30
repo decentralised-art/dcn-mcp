@@ -50,14 +50,12 @@ class MCPStdioTests(unittest.TestCase):
                         "confirm_publication", "execute_connector",
                     ):
                         self.assertIn(f"core.{name}", all_tool_names)
+                    self.assertTrue(all(name.startswith("core.") for name in all_tool_names))
 
                     resources_page_1 = await session.list_resources()
                     resource_uris_page_1 = {str(resource.uri) for resource in resources_page_1.resources}
-                    self.assertIn("dcn://resource/core.dcn_core_primer", resource_uris_page_1)
-
-                    if resources_page_1.nextCursor:
-                        resources_page_2 = await session.list_resources(params=types.PaginatedRequestParams(cursor=resources_page_1.nextCursor))
-                        self.assertTrue(resources_page_2.resources)
+                    self.assertEqual(resource_uris_page_1, {"dcn://resource/core.dcn_core_primer"})
+                    self.assertIsNone(resources_page_1.nextCursor)
 
                     read_result = await session.read_resource("dcn://resource/core.dcn_core_primer")
                     self.assertEqual(len(read_result.contents), 1)

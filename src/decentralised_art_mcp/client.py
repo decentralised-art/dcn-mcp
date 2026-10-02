@@ -11,7 +11,7 @@ from .lifecycle import LifecycleClientMixin, execution_particles
 from .models import ChainCursor, TransformationPair
 
 
-class DCNClient(LifecycleClientMixin):
+class DecentralisedArtClient(LifecycleClientMixin):
     def __init__(self, base_url: str, timeout: float = 15.0):
         self.base_url = base_url.rstrip("/")
         self.timeout = float(timeout)
@@ -25,7 +25,7 @@ class DCNClient(LifecycleClientMixin):
     def close(self) -> None:
         self.session.close()
 
-    def __enter__(self) -> "DCNClient":
+    def __enter__(self) -> "DecentralisedArtClient":
         return self
 
     def __exit__(self, exc_type, exc, traceback) -> None:

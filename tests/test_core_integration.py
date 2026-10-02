@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import Mock
 
-from dcn_mcp.context import clear_runtime_overrides, set_runtime_overrides
-from dcn_mcp.server import build_registries
+from decentralised_art_mcp.context import clear_runtime_overrides, set_runtime_overrides
+from decentralised_art_mcp.server import build_registries
 
 
 class FakeAccount:

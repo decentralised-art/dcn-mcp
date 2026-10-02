@@ -3,9 +3,9 @@ from unittest.mock import Mock
 
 import requests
 
-from dcn_mcp.api_contracts import api_path, requires_auth, spec_commit, validate_query, validate_response
-from dcn_mcp.client import DCNClient
-from dcn_mcp.errors import ValidationError
+from decentralised_art_mcp.api_contracts import api_path, requires_auth, spec_commit, validate_query, validate_response
+from decentralised_art_mcp.client import DecentralisedArtClient
+from decentralised_art_mcp.errors import ValidationError
 
 
 class ApiContractsTests(unittest.TestCase):
@@ -21,7 +21,7 @@ class ApiContractsTests(unittest.TestCase):
         self.assertTrue(requires_auth("POST_publishPrepare"))
 
     def test_create_request_rejects_missing_spec_fields_before_http(self):
-        client = DCNClient("https://api.example/chain")
+        client = DecentralisedArtClient("https://api.example/chain")
         client._post_with_reauth = Mock()
         with self.assertRaises(ValidationError) as raised:
             client.post_connector({"name": "example"}, object())
@@ -40,7 +40,7 @@ class ApiContractsTests(unittest.TestCase):
             })
 
     def test_publication_confirmation_uses_http_status_specific_schema(self):
-        client = DCNClient("https://api.example/chain")
+        client = DecentralisedArtClient("https://api.example/chain")
         account = object()
         tx_hash = "0x" + "cd" * 32
         pending = {"message": "not mined yet", "status": "pending", "tx_hash": tx_hash}

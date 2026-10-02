@@ -7,7 +7,7 @@ from .errors import ResourceNotFoundError
 from .models import ResourceSpec
 
 
-RESOURCE_URI_PREFIX = "dcn://resource/"
+RESOURCE_URI_PREFIX = "decentralised-art://resource/"
 
 
 def resource_uri(name: str) -> str:

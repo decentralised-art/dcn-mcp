@@ -12,7 +12,7 @@ from .server import build_registries
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT_DIR = ROOT_DIR / "dist"
-BUNDLE_NAME = "dcn-mcp"
+BUNDLE_NAME = "decentralised-art-mcp"
 MANIFEST_VERSION = "0.4"
 
 
@@ -34,21 +34,21 @@ def build_manifest() -> dict:
         },
         "server": {
             "type": "uv",
-            "entry_point": "src/dcn_mcp/server.py",
+            "entry_point": "src/decentralised_art_mcp/server.py",
             "mcp_config": {
                 "command": "uv",
                 "args": [
                     "run",
                     "--directory",
                     "${__dirname}",
-                    "dcn-mcp",
+                    "decentralised-art-mcp",
                     "stdio",
                 ],
                 "env": {
                     "API_BASE": "${user_config.api_base}",
                     "PRIVATE_KEY": "${user_config.private_key}",
-                    "DCN_TIMEOUT": "${user_config.dcn_timeout}",
-                    "DCN_ARTIFACT_ROOT": "${user_config.artifact_root}",
+                    "DECENTRALISED_ART_TIMEOUT": "${user_config.timeout}",
+                    "DECENTRALISED_ART_ARTIFACT_ROOT": "${user_config.artifact_root}",
                 },
             },
         },
@@ -60,7 +60,7 @@ def build_manifest() -> dict:
             for item in tools.describe_tools()
         ],
         "keywords": [
-            "dcn",
+            "decentralised-art",
             "mcp",
             "decentralised.art",
             "format-agnostic",
@@ -88,7 +88,7 @@ def build_manifest() -> dict:
                 "required": False,
                 "default": "",
             },
-            "dcn_timeout": {
+            "timeout": {
                 "type": "number",
                 "title": "API Timeout (seconds)",
                 "description": "HTTP timeout used for decentralised.art API requests.",
@@ -101,7 +101,7 @@ def build_manifest() -> dict:
                 "type": "string",
                 "title": "Artifact Root",
                 "description": "Directory for persistent publication transaction records.",
-                "default": "dcn-mcp-artifacts",
+                "default": "decentralised-art-mcp-artifacts",
                 "required": True,
             },
         },

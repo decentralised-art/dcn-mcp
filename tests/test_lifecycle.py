@@ -8,9 +8,9 @@ from threading import Barrier
 import unittest
 from unittest.mock import Mock
 
-from dcn_mcp.client import DCNClient
-from dcn_mcp.errors import error_to_payload
-from dcn_mcp.lifecycle import LifecycleClientMixin, PublicationPending, execution_particles, publish_recorded
+from decentralised_art_mcp.client import DecentralisedArtClient
+from decentralised_art_mcp.errors import error_to_payload
+from decentralised_art_mcp.lifecycle import LifecycleClientMixin, PublicationPending, execution_particles, publish_recorded
 
 OWNER = "0x" + "11" * 20
 HASH = "0x" + "ab" * 32
@@ -64,7 +64,7 @@ LIMITS = {"max_fee_per_gas": 100, "max_total_fee": 2100000, "poll_interval": 0}
 
 class LifecycleTests(unittest.TestCase):
     def test_envelope_preserves_provenance_and_draft_route_uses_array(self):
-        client = DCNClient("https://example.invalid/chain")
+        client = DecentralisedArtClient("https://example.invalid/chain")
         client.ensure_auth = Mock(side_effect=AssertionError("execution must not authenticate"))
         client.access_token = "unused-token"
         responses = [SimpleNamespace(status_code=200, ok=True, json=lambda payload=payload: payload)
@@ -82,7 +82,7 @@ class LifecycleTests(unittest.TestCase):
     def test_execute_rejects_legacy_array_and_missing_provenance(self):
         for value in ([], {"particles": []}, {**ENVELOPE, "block_number": True}, {**ENVELOPE, "runner": "0x0"}):
             with self.subTest(value=value):
-                client = DCNClient("https://example.invalid/chain")
+                client = DecentralisedArtClient("https://example.invalid/chain")
                 client._handle_response = lambda value: value
                 client.session.post = Mock(return_value=value)
                 with self.assertRaises(ValueError):
@@ -233,7 +233,7 @@ class LifecycleTests(unittest.TestCase):
             self.assertEqual(json.loads(path.read_text())["publication"]["status"], "mined")
 
     def test_broadcast_http_request_has_no_401_retry(self):
-        client = DCNClient("https://example.invalid/chain")
+        client = DecentralisedArtClient("https://example.invalid/chain")
         client.ensure_auth = Mock()
         client.session.post = Mock(return_value=SimpleNamespace(status_code=401, ok=False, json=lambda: {"message": "expired"}))
         with self.assertRaises(Exception):

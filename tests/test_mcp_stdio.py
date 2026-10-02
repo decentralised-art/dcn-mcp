@@ -21,7 +21,7 @@ class MCPStdioTests(unittest.TestCase):
             env["PYTHONPATH"] = str(SRC) if not existing_path else str(SRC) + os.pathsep + existing_path
             server = StdioServerParameters(
                 command=sys.executable,
-                args=["-m", "dcn_mcp.server", "stdio"],
+                args=["-m", "decentralised_art_mcp.server", "stdio"],
                 env=env,
                 cwd=str(ROOT),
             )
@@ -54,13 +54,13 @@ class MCPStdioTests(unittest.TestCase):
 
                     resources_page_1 = await session.list_resources()
                     resource_uris_page_1 = {str(resource.uri) for resource in resources_page_1.resources}
-                    self.assertEqual(resource_uris_page_1, {"dcn://resource/core.dcn_core_primer"})
+                    self.assertEqual(resource_uris_page_1, {"decentralised-art://resource/core.primer"})
                     self.assertIsNone(resources_page_1.nextCursor)
 
-                    read_result = await session.read_resource("dcn://resource/core.dcn_core_primer")
+                    read_result = await session.read_resource("decentralised-art://resource/core.primer")
                     self.assertEqual(len(read_result.contents), 1)
                     self.assertIn("format-agnostic", read_result.contents[0].text)
-                    self.assertEqual(str(read_result.contents[0].uri), "dcn://resource/core.dcn_core_primer")
+                    self.assertEqual(str(read_result.contents[0].uri), "decentralised-art://resource/core.primer")
 
                     call_result = await session.call_tool("core.build_parent_connector", {"name": "piece", "child_names": ["a", "b"]})
                     self.assertFalse(call_result.isError)

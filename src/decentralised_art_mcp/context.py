@@ -6,15 +6,15 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Optional
 
 from .auth import load_account
-from .client import DCNClient
+from .client import DecentralisedArtClient
 from .config import DEFAULT_API_BASE, DEFAULT_TIMEOUT, MAX_TIMEOUT_SECONDS, MIN_TIMEOUT_SECONDS
 from .errors import AuthConfigurationError, ValidationError
 
 ClientFactory = Callable[[str, float], Any]
 AccountLoader = Callable[[Optional[str]], Any]
 
-_CLIENT_FACTORY_OVERRIDE: ContextVar[Optional[ClientFactory]] = ContextVar("dcn_mcp_client_factory_override", default=None)
-_ACCOUNT_LOADER_OVERRIDE: ContextVar[Optional[AccountLoader]] = ContextVar("dcn_mcp_account_loader_override", default=None)
+_CLIENT_FACTORY_OVERRIDE: ContextVar[Optional[ClientFactory]] = ContextVar("decentralised_art_mcp_client_factory_override", default=None)
+_ACCOUNT_LOADER_OVERRIDE: ContextVar[Optional[AccountLoader]] = ContextVar("decentralised_art_mcp_account_loader_override", default=None)
 
 
 def set_runtime_overrides(*, client_factory: Optional[ClientFactory] = None, account_loader: Optional[AccountLoader] = None) -> None:
@@ -38,7 +38,7 @@ class RuntimeContext:
 
     def client(self) -> Any:
         if self._client is None:
-            factory = self.client_factory or _CLIENT_FACTORY_OVERRIDE.get() or (lambda api_base, timeout: DCNClient(api_base, timeout=timeout))
+            factory = self.client_factory or _CLIENT_FACTORY_OVERRIDE.get() or (lambda api_base, timeout: DecentralisedArtClient(api_base, timeout=timeout))
             self._client = factory(str(self.api_base), float(self.timeout))
         return self._client
 

@@ -1,7 +1,7 @@
 import unittest
 
-from dcn_mcp.registry import ToolRegistry
-from dcn_mcp.schemas import integer_schema, object_schema
+from decentralised_art_mcp.registry import ToolRegistry
+from decentralised_art_mcp.schemas import integer_schema, object_schema
 
 
 class RegistryTests(unittest.TestCase):

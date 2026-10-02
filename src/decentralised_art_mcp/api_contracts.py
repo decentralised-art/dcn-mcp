@@ -17,7 +17,7 @@ from .errors import ValidationError
 
 @lru_cache(maxsize=1)
 def _document() -> dict[str, Any]:
-    resource = files("dcn_mcp").joinpath("generated/api_contracts.json")
+    resource = files("decentralised_art_mcp").joinpath("generated/api_contracts.json")
     return json.loads(resource.read_text(encoding="utf-8"))
 
 

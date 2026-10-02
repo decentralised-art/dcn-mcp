@@ -3,7 +3,7 @@
 ## Core
 
 The core layer may know about:
-- DCN transport
+- decentralised.art API transport
 - authentication
 - connectors
 - transformations

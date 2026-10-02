@@ -1,6 +1,6 @@
 import unittest
 
-from dcn_mcp.server import build_registries
+from decentralised_art_mcp.server import build_registries
 
 
 class ServerTests(unittest.TestCase):
@@ -26,7 +26,7 @@ class ServerTests(unittest.TestCase):
         for kind in ("connector", "transformation", "condition"):
             self.assertNotIn(f"core.deploy_{kind}", tool_names)
         resource_names = {item["name"] for item in resources.describe_resources()}
-        self.assertEqual(resource_names, {"core.dcn_core_primer"})
+        self.assertEqual(resource_names, {"core.primer"})
 
 
 if __name__ == "__main__":

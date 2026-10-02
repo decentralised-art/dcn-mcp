@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 
-class DCNMCPError(Exception):
-    code = "dcn_mcp_error"
+class DecentralisedArtMcpError(Exception):
+    code = "decentralised_art_mcp_error"
 
     def __init__(self, message: str, *, details: Optional[Dict[str, Any]] = None):
         super().__init__(message)
@@ -21,23 +21,23 @@ class DCNMCPError(Exception):
         return payload
 
 
-class ValidationError(DCNMCPError):
+class ValidationError(DecentralisedArtMcpError):
     code = "validation_error"
 
 
-class ToolNotFoundError(DCNMCPError):
+class ToolNotFoundError(DecentralisedArtMcpError):
     code = "tool_not_found"
 
 
-class ResourceNotFoundError(DCNMCPError):
+class ResourceNotFoundError(DecentralisedArtMcpError):
     code = "resource_not_found"
 
 
-class AuthConfigurationError(DCNMCPError):
+class AuthConfigurationError(DecentralisedArtMcpError):
     code = "auth_configuration_error"
 
 
-class InternalToolError(DCNMCPError):
+class InternalToolError(DecentralisedArtMcpError):
     code = "internal_tool_error"
 
 
@@ -60,7 +60,7 @@ def error_to_payload(exc: Exception) -> Dict[str, Any]:
             if isinstance(body.get(key), list):
                 details[key] = body[key]
         return {"code": "http_error", "message": str(body.get("message") or "decentralised.art request failed"), "details": details}
-    if isinstance(exc, DCNMCPError):
+    if isinstance(exc, DecentralisedArtMcpError):
         return exc.to_payload()
     return InternalToolError(
         "Internal tool error.",

@@ -1,6 +1,6 @@
 import unittest
 
-from dcn_mcp.client import DCNClient, parse_sse_replay_lines
+from decentralised_art_mcp.client import DecentralisedArtClient, parse_sse_replay_lines
 
 
 class FakeResponse:
@@ -42,7 +42,7 @@ class FakeSession:
 
 class ClientTests(unittest.TestCase):
     def test_query_params_are_passed_to_requests(self):
-        client = DCNClient("https://api.example/chain")
+        client = DecentralisedArtClient("https://api.example/chain")
         session = FakeSession()
         client.session = session
 
@@ -53,7 +53,7 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(session.calls[0][2]["params"], {"limit": 10, "after": cursor})
 
     def test_path_segments_are_url_encoded(self):
-        client = DCNClient("https://api.example/chain")
+        client = DecentralisedArtClient("https://api.example/chain")
         session = FakeSession()
         client.session = session
 
@@ -62,7 +62,7 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(session.calls[0][1], "https://api.example/chain/format/abc%2Fdef")
 
     def test_condition_uses_condition_endpoint(self):
-        client = DCNClient("https://api.example/chain")
+        client = DecentralisedArtClient("https://api.example/chain")
         session = FakeSession()
         client.session = session
 
@@ -71,7 +71,7 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(session.calls[0][1], "https://api.example/chain/condition/cond%2Fa")
 
     def test_feed_page_uses_current_cursor_and_type_params(self):
-        client = DCNClient("https://api.example/chain")
+        client = DecentralisedArtClient("https://api.example/chain")
         session = FakeSession()
         client.session = session
 
@@ -106,7 +106,7 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(payload["meta"], {"replay_count": 1, "live": False})
 
     def test_client_close_closes_session(self):
-        client = DCNClient("https://api.example/chain")
+        client = DecentralisedArtClient("https://api.example/chain")
         session = FakeSession()
         client.session = session
 

@@ -10,7 +10,7 @@ STAMP := $(VENV_DIR)/.bootstrap-complete
 
 help:
 	@echo "decentralised.art MCP targets:"
-	@echo "  make install        Create/update the local .venv and install dcn-mcp"
+	@echo "  make install        Create/update the local .venv and install decentralised-art-mcp"
 	@echo "  make smoke          Run the repo smoke test"
 	@echo "  make test           Run the full test suite"
 	@echo "  make stdio          Run the real MCP stdio server"
@@ -24,7 +24,7 @@ $(STAMP): pyproject.toml scripts/bootstrap_venv.py
 	"$(PYTHON)" scripts/bootstrap_venv.py
 
 install: $(STAMP)
-	@echo "dcn-mcp is installed in $(VENV_DIR)"
+	@echo "decentralised-art-mcp is installed in $(VENV_DIR)"
 
 smoke: $(STAMP)
 	"$(VENV_PYTHON)" scripts/smoke_test.py
@@ -34,19 +34,19 @@ test: $(STAMP)
 	"$(VENV_PYTHON)" -m unittest discover -s tests -v
 
 stdio: $(STAMP)
-	"$(VENV_PYTHON)" -m dcn_mcp.server stdio
+	"$(VENV_PYTHON)" -m decentralised_art_mcp.server stdio
 
 mcpb: $(STAMP)
-	"$(VENV_PYTHON)" -m dcn_mcp.mcpb
+	"$(VENV_PYTHON)" -m decentralised_art_mcp.mcpb
 
 list-tools: $(STAMP)
-	"$(VENV_PYTHON)" -m dcn_mcp.server list-tools
+	"$(VENV_PYTHON)" -m decentralised_art_mcp.server list-tools
 
 list-resources: $(STAMP)
-	"$(VENV_PYTHON)" -m dcn_mcp.server list-resources
+	"$(VENV_PYTHON)" -m decentralised_art_mcp.server list-resources
 
 read-core-primer: $(STAMP)
-	"$(VENV_PYTHON)" -m dcn_mcp.server read-resource core.dcn_core_primer
+	"$(VENV_PYTHON)" -m decentralised_art_mcp.server read-resource core.primer
 
 invoke-example: $(STAMP)
-	"$(VENV_PYTHON)" -m dcn_mcp.server invoke core.build_parent_connector '{"name":"piece","child_names":["a","b"]}'
+	"$(VENV_PYTHON)" -m decentralised_art_mcp.server invoke core.build_parent_connector '{"name":"piece","child_names":["a","b"]}'

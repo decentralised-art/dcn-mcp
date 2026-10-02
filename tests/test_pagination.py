@@ -1,6 +1,6 @@
 import unittest
 
-from dcn_mcp.pagination import paginate
+from decentralised_art_mcp.pagination import paginate
 
 
 class PaginationTests(unittest.TestCase):

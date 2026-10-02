@@ -2,4 +2,4 @@
 set -eu
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-"$ROOT_DIR/.venv/bin/python" -m dcn_mcp.mcpb
+"$ROOT_DIR/.venv/bin/python" -m decentralised_art_mcp.mcpb

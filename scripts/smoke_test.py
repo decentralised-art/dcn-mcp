@@ -28,10 +28,10 @@ def run(args: list[str], *, quiet: bool = False) -> None:
 def main() -> None:
     python = str(venv_python())
     run([python, "-m", "unittest", "discover", "-s", str(ROOT_DIR / "tests"), "-v"])
-    run([python, "-m", "dcn_mcp.server", "list-tools"], quiet=True)
-    run([python, "-m", "dcn_mcp.server", "list-resources"], quiet=True)
+    run([python, "-m", "decentralised_art_mcp.server", "list-tools"], quiet=True)
+    run([python, "-m", "decentralised_art_mcp.server", "list-resources"], quiet=True)
     payload = json.dumps({"name": "piece", "child_names": ["a", "b"]})
-    run([python, "-m", "dcn_mcp.server", "invoke", "core.build_parent_connector", payload], quiet=True)
+    run([python, "-m", "decentralised_art_mcp.server", "invoke", "core.build_parent_connector", payload], quiet=True)
     print("decentralised.art MCP smoke test passed")
 
 

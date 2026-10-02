@@ -15,7 +15,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC_ROOT = ROOT / "submodules" / "api-spec"
-OUTPUT = ROOT / "src" / "dcn_mcp" / "generated" / "api_contracts.json"
+OUTPUT = ROOT / "src" / "decentralised_art_mcp" / "generated" / "api_contracts.json"
 OPERATIONS = {
     "GET_version", "GET_nonce", "POST_auth", "GET_connector",
     "GET_transformation", "GET_condition", "POST_connector",

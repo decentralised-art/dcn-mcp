@@ -19,7 +19,7 @@ from .resources import ResourceRegistry
 from .tools import core
 
 
-SERVER_NAME = "dcn-mcp"
+SERVER_NAME = "decentralised-art-mcp"
 SERVER_INSTRUCTIONS = (
     "decentralised.art MCP server exposing core protocol operations for local drafts, simulation, "
     "publication, onchain execution, and discovery."
@@ -44,9 +44,9 @@ def build_registries() -> Tuple[ToolRegistry, ResourceRegistry]:
 
     base = pathlib.Path(__file__).resolve().parent / "resources" / "core"
     resources.register_markdown(
-        name="core.dcn_core_primer",
+        name="core.primer",
         description="Format-agnostic decentralised.art primer covering connectors, dimensions, RI, and execution trees.",
-        path=base / "dcn_core_primer.md",
+        path=base / "primer.md",
     )
 
     return tools, resources

@@ -1,6 +1,6 @@
 # mcp
 
-This repository provides the `dcn-mcp` server and CLI for decentralised.art.
+This repository provides the decentralised.art MCP server and its `decentralised-art-mcp` CLI.
 It exposes format-agnostic protocol operations under the `core.*` namespace.
 
 If you are a user of this repo, the important question is simple:
@@ -39,7 +39,7 @@ When the MCP server is running, an MCP host can use tools such as:
 
 It also exposes the MCP resource:
 
-- `core.dcn_core_primer`
+- `core.primer`
 
 ## Drafts, publication and execution
 
@@ -66,7 +66,7 @@ Solidity source is no longer part of runtime details.
 Publication is explicit and owner-paid. First inspect `core.prepare_publication`,
 then call `core.publish_entity` with `kind`, `name`, `max_fee_per_gas`,
 `max_total_fee` (both limits in wei; total means gas limit times max fee), and a
-unique `record_path` inside `DCN_ARTIFACT_ROOT`. `chain_id` defaults to Sepolia
+unique `record_path` inside `DECENTRALISED_ART_ARTIFACT_ROOT`. `chain_id` defaults to Sepolia
 (`11155111`). Dependencies must be published before their parents. No chain RPC
 URL is required: the account signs locally and the server relays one transaction.
 Publish serially for each owner and resolve pending transactions before preparing
@@ -136,16 +136,16 @@ make smoke
 2. Add this to `~/.codex/config.toml`:
 
 ```toml
-[mcp_servers.dcn]
+[mcp_servers.decentralised-art]
 command = "/path/to/mcp/.venv/bin/python"
-args = ["-m", "dcn_mcp.server", "stdio"]
+args = ["-m", "decentralised_art_mcp.server", "stdio"]
 
-[mcp_servers.dcn.env]
+[mcp_servers.decentralised-art.env]
 PYTHONPATH = "/path/to/mcp/src"
 API_BASE = "https://api.decentralised.art/chain"
 PRIVATE_KEY = "<optional>"
-DCN_TIMEOUT = "15"
-DCN_ARTIFACT_ROOT = "/path/to/mcp/dcn-mcp-artifacts"
+DECENTRALISED_ART_TIMEOUT = "15"
+DECENTRALISED_ART_ARTIFACT_ROOT = "/path/to/mcp/decentralised-art-mcp-artifacts"
 ```
 
 Notes:
@@ -164,7 +164,7 @@ codex mcp list
 5. In the new session, ask Codex to use it explicitly. For example:
 
 - `Use the decentralised.art MCP to list formats`
-- `Use the decentralised.art MCP to read core.dcn_core_primer`
+- `Use the decentralised.art MCP to read core.primer`
 
 Important:
 - a newly registered MCP server usually will not appear inside an already-running session
@@ -183,7 +183,7 @@ Command:
 Args:
 
 ```bash
--m dcn_mcp.server stdio
+-m decentralised_art_mcp.server stdio
 ```
 
 Working directory:
@@ -198,8 +198,8 @@ Environment:
 PYTHONPATH=/path/to/mcp/src
 API_BASE=https://api.decentralised.art/chain
 PRIVATE_KEY=<your-private-key-if-you-want-authenticated-decentralised.art-actions>
-DCN_TIMEOUT=15
-DCN_ARTIFACT_ROOT=/path/to/mcp/dcn-mcp-artifacts
+DECENTRALISED_ART_TIMEOUT=15
+DECENTRALISED_ART_ARTIFACT_ROOT=/path/to/mcp/decentralised-art-mcp-artifacts
 ```
 
 ## Example MCP Config Snippet
@@ -208,16 +208,16 @@ Use this as a generic starting point for an MCP-capable host that accepts JSON s
 
 ```json
 {
-  "dcn": {
+  "decentralised-art": {
     "command": "/path/to/mcp/.venv/bin/python",
-    "args": ["-m", "dcn_mcp.server", "stdio"],
+    "args": ["-m", "decentralised_art_mcp.server", "stdio"],
     "cwd": "/path/to/mcp",
     "env": {
       "PYTHONPATH": "/path/to/mcp/src",
       "API_BASE": "https://api.decentralised.art/chain",
       "PRIVATE_KEY": "<optional>",
-      "DCN_TIMEOUT": "15",
-      "DCN_ARTIFACT_ROOT": "/path/to/mcp/dcn-mcp-artifacts"
+      "DECENTRALISED_ART_TIMEOUT": "15",
+      "DECENTRALISED_ART_ARTIFACT_ROOT": "/path/to/mcp/decentralised-art-mcp-artifacts"
     }
   }
 }
@@ -244,16 +244,16 @@ Replace `/path/to/mcp` below with the directory where you cloned this repo.
 OpenAI documents Codex MCP configuration in `~/.codex/config.toml`. For this server, add:
 
 ```toml
-[mcp_servers.dcn]
+[mcp_servers.decentralised-art]
 command = "/path/to/mcp/.venv/bin/python"
-args = ["-m", "dcn_mcp.server", "stdio"]
+args = ["-m", "decentralised_art_mcp.server", "stdio"]
 
-[mcp_servers.dcn.env]
+[mcp_servers.decentralised-art.env]
 PYTHONPATH = "/path/to/mcp/src"
 API_BASE = "https://api.decentralised.art/chain"
 PRIVATE_KEY = "<optional>"
-DCN_TIMEOUT = "15"
-DCN_ARTIFACT_ROOT = "/path/to/mcp/dcn-mcp-artifacts"
+DECENTRALISED_ART_TIMEOUT = "15"
+DECENTRALISED_ART_ARTIFACT_ROOT = "/path/to/mcp/decentralised-art-mcp-artifacts"
 ```
 
 Codex CLI and the Codex app share this configuration.
@@ -265,16 +265,16 @@ VS Code reads either workspace `.vscode/mcp.json` or user-profile MCP configurat
 ```json
 {
   "servers": {
-    "dcn": {
+    "decentralised-art": {
       "type": "stdio",
       "command": "/path/to/mcp/.venv/bin/python",
-      "args": ["-m", "dcn_mcp.server", "stdio"],
+      "args": ["-m", "decentralised_art_mcp.server", "stdio"],
       "env": {
         "PYTHONPATH": "/path/to/mcp/src",
         "API_BASE": "https://api.decentralised.art/chain",
         "PRIVATE_KEY": "<optional>",
-        "DCN_TIMEOUT": "15",
-        "DCN_ARTIFACT_ROOT": "/path/to/mcp/dcn-mcp-artifacts"
+        "DECENTRALISED_ART_TIMEOUT": "15",
+        "DECENTRALISED_ART_ARTIFACT_ROOT": "/path/to/mcp/decentralised-art-mcp-artifacts"
       }
     }
   }
@@ -288,16 +288,16 @@ Cursor supports project `.cursor/mcp.json` and global `~/.cursor/mcp.json`. For 
 ```json
 {
   "mcpServers": {
-    "dcn": {
+    "decentralised-art": {
       "type": "stdio",
       "command": "/path/to/mcp/.venv/bin/python",
-      "args": ["-m", "dcn_mcp.server", "stdio"],
+      "args": ["-m", "decentralised_art_mcp.server", "stdio"],
       "env": {
         "PYTHONPATH": "/path/to/mcp/src",
         "API_BASE": "https://api.decentralised.art/chain",
         "PRIVATE_KEY": "<optional>",
-        "DCN_TIMEOUT": "15",
-        "DCN_ARTIFACT_ROOT": "/path/to/mcp/dcn-mcp-artifacts"
+        "DECENTRALISED_ART_TIMEOUT": "15",
+        "DECENTRALISED_ART_ARTIFACT_ROOT": "/path/to/mcp/decentralised-art-mcp-artifacts"
       }
     }
   }
@@ -311,15 +311,15 @@ Claude Code supports project-scoped `.mcp.json` files and a `claude mcp add` wor
 ```json
 {
   "mcpServers": {
-    "dcn": {
+    "decentralised-art": {
       "command": "/path/to/mcp/.venv/bin/python",
-      "args": ["-m", "dcn_mcp.server", "stdio"],
+      "args": ["-m", "decentralised_art_mcp.server", "stdio"],
       "env": {
         "PYTHONPATH": "/path/to/mcp/src",
         "API_BASE": "https://api.decentralised.art/chain",
         "PRIVATE_KEY": "<optional>",
-        "DCN_TIMEOUT": "15",
-        "DCN_ARTIFACT_ROOT": "/path/to/mcp/dcn-mcp-artifacts"
+        "DECENTRALISED_ART_TIMEOUT": "15",
+        "DECENTRALISED_ART_ARTIFACT_ROOT": "/path/to/mcp/decentralised-art-mcp-artifacts"
       }
     }
   }
@@ -332,9 +332,9 @@ CLI alternative:
 claude mcp add --transport stdio --scope project \
   --env PYTHONPATH=/path/to/mcp/src \
   --env API_BASE=https://api.decentralised.art/chain \
-  --env DCN_TIMEOUT=15 \
-  --env DCN_ARTIFACT_ROOT=/path/to/mcp/dcn-mcp-artifacts \
-  dcn -- /path/to/mcp/.venv/bin/python -m dcn_mcp.server stdio
+  --env DECENTRALISED_ART_TIMEOUT=15 \
+  --env DECENTRALISED_ART_ARTIFACT_ROOT=/path/to/mcp/decentralised-art-mcp-artifacts \
+  decentralised-art -- /path/to/mcp/.venv/bin/python -m decentralised_art_mcp.server stdio
 ```
 
 ### Claude Desktop
@@ -352,7 +352,7 @@ make mcpb
 That produces a file like:
 
 ```bash
-dist/dcn-mcp-<version>.mcpb
+dist/decentralised-art-mcp-<version>.mcpb
 ```
 
 The same bundle is also uploaded automatically to the corresponding GitHub release asset when a release is published.
@@ -367,7 +367,8 @@ After installation, Claude Desktop will prompt for the bundle's user config:
 
 - `api_base`
 - `private_key`
-- `dcn_timeout`
+- `timeout`
+- `artifact_root`
 
 Implementation notes:
 - the bundle is built as a `manifest_version: "0.4"` MCPB
@@ -381,7 +382,7 @@ The official MCP Inspector docs show launching a local Python server through a c
 ```bash
 npx @modelcontextprotocol/inspector \
   /path/to/mcp/.venv/bin/python \
-  -m dcn_mcp.server stdio
+  -m decentralised_art_mcp.server stdio
 ```
 
 If you want the server to inherit the repo-local environment cleanly, run it with:
@@ -389,11 +390,11 @@ If you want the server to inherit the repo-local environment cleanly, run it wit
 ```bash
 PYTHONPATH=/path/to/mcp/src \
 API_BASE=https://api.decentralised.art/chain \
-DCN_TIMEOUT=15 \
-DCN_ARTIFACT_ROOT=/path/to/mcp/dcn-mcp-artifacts \
+DECENTRALISED_ART_TIMEOUT=15 \
+DECENTRALISED_ART_ARTIFACT_ROOT=/path/to/mcp/decentralised-art-mcp-artifacts \
 npx @modelcontextprotocol/inspector \
   /path/to/mcp/.venv/bin/python \
-  -m dcn_mcp.server stdio
+  -m decentralised_art_mcp.server stdio
 ```
 
 ## Environment Variables
@@ -407,11 +408,29 @@ These are the main runtime settings:
   - required for authenticated draft creation and publication
   - signs the chain API nonce flow (`GET /chain/nonce/{address}` then `POST /chain/auth`)
 - this chain token is separate from the app/services SIWE session used by `services-backend`
-- `DCN_TIMEOUT`
+- `DECENTRALISED_ART_TIMEOUT`
   - request timeout in seconds
-- `DCN_ARTIFACT_ROOT`
+- `DECENTRALISED_ART_ARTIFACT_ROOT`
   - directory for persistent publication transaction records
-  - default: `dcn-mcp-artifacts`
+  - default: `decentralised-art-mcp-artifacts`
+
+### Upgrading from the dcn-mcp names
+
+Version 0.2.0 renamed everything that still used the old `dcn` naming:
+
+| Before | Now |
+|---|---|
+| package and command `dcn-mcp` | `decentralised-art-mcp` |
+| module `dcn_mcp.server` | `decentralised_art_mcp.server` |
+| `DCN_TIMEOUT` | `DECENTRALISED_ART_TIMEOUT` |
+| `DCN_ARTIFACT_ROOT` | `DECENTRALISED_ART_ARTIFACT_ROOT` |
+| default folder `dcn-mcp-artifacts` | `decentralised-art-mcp-artifacts` |
+| resource `core.dcn_core_primer` | `core.primer` |
+
+After pulling, run `make install` again and update your host configuration to the new module
+name. The old `DCN_TIMEOUT` and `DCN_ARTIFACT_ROOT` settings are still read when the new ones
+are unset, and an existing `dcn-mcp-artifacts` folder keeps being used when no new folder
+exists, so pending publication records are never lost.
 
 ## Verify That It Actually Works
 
@@ -437,9 +456,9 @@ Important test coverage includes:
 ```bash
 cd /path/to/mcp
 source .venv/bin/activate
-python -m dcn_mcp.server list-tools
-python -m dcn_mcp.server list-resources
-python -m dcn_mcp.server invoke core.build_parent_connector '{"name":"piece","child_names":["a","b"]}'
+python -m decentralised_art_mcp.server list-tools
+python -m decentralised_art_mcp.server list-resources
+python -m decentralised_art_mcp.server invoke core.build_parent_connector '{"name":"piece","child_names":["a","b"]}'
 ```
 
 ### C. Real MCP host integration
@@ -448,7 +467,7 @@ Register the server in your MCP host and confirm that the host can:
 
 - list tools
 - list resources
-- read `core.dcn_core_primer`
+- read `core.primer`
 - call `core.build_parent_connector`
 
 ## Make Targets
@@ -457,7 +476,7 @@ The preferred user interface is now `make`:
 
 ### `make install`
 
-Creates or updates `.venv` and installs `dcn-mcp` in editable mode.
+Creates or updates `.venv` and installs `decentralised-art-mcp` in editable mode.
 
 ### `make smoke`
 
@@ -497,7 +516,7 @@ These still exist underneath the Makefile:
 
 ### `./scripts/bootstrap_venv.sh`
 
-Creates `.venv`, upgrades `pip`, and installs `dcn-mcp` in editable mode.
+Creates `.venv`, upgrades `pip`, and installs `decentralised-art-mcp` in editable mode.
 
 ### `./scripts/run_stdio.sh`
 
@@ -516,31 +535,31 @@ Runs the repo test suite and local MCP checks.
 Run as a real MCP stdio server:
 
 ```bash
-python -m dcn_mcp.server stdio
+python -m decentralised_art_mcp.server stdio
 ```
 
 List tools:
 
 ```bash
-python -m dcn_mcp.server list-tools
+python -m decentralised_art_mcp.server list-tools
 ```
 
 List resources:
 
 ```bash
-python -m dcn_mcp.server list-resources
+python -m decentralised_art_mcp.server list-resources
 ```
 
 Read a resource:
 
 ```bash
-python -m dcn_mcp.server read-resource core.dcn_core_primer
+python -m decentralised_art_mcp.server read-resource core.primer
 ```
 
 Invoke a tool:
 
 ```bash
-python -m dcn_mcp.server invoke core.connector_exists '{"name":"pitch"}'
+python -m decentralised_art_mcp.server invoke core.connector_exists '{"name":"pitch"}'
 ```
 
 Tool invocation returns a structured envelope:

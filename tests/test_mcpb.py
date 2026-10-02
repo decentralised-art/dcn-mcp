@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 
-from dcn_mcp.mcpb import build_bundle, build_manifest
+from decentralised_art_mcp.mcpb import build_bundle, build_manifest
 
 
 class McpbTests(TestCase):
@@ -17,7 +17,7 @@ class McpbTests(TestCase):
         self.assertEqual(manifest["server"]["mcp_config"]["command"], "uv")
         self.assertIn("api_base", manifest["user_config"])
         self.assertIn("private_key", manifest["user_config"])
-        self.assertIn("dcn_timeout", manifest["user_config"])
+        self.assertIn("timeout", manifest["user_config"])
         self.assertIn("artifact_root", manifest["user_config"])
         self.assertTrue(any(tool["name"] == "core.build_parent_connector" for tool in manifest["tools"]))
         self.assertTrue(all(tool["name"].startswith("core.") for tool in manifest["tools"]))
@@ -32,18 +32,18 @@ class McpbTests(TestCase):
                 self.assertIn("manifest.json", names)
                 self.assertIn("pyproject.toml", names)
                 self.assertIn("README.md", names)
-                self.assertIn("src/dcn_mcp/server.py", names)
-                self.assertIn("src/dcn_mcp/lifecycle.py", names)
-                self.assertFalse(any(name.startswith("src/dcn_mcp/adapters/") for name in names))
-                self.assertFalse(any(name.startswith("src/dcn_mcp/resources/music/") for name in names))
-                contract_path = "src/dcn_mcp/generated/api_contracts.json"
+                self.assertIn("src/decentralised_art_mcp/server.py", names)
+                self.assertIn("src/decentralised_art_mcp/lifecycle.py", names)
+                self.assertFalse(any(name.startswith("src/decentralised_art_mcp/adapters/") for name in names))
+                self.assertFalse(any(name.startswith("src/decentralised_art_mcp/resources/music/") for name in names))
+                contract_path = "src/decentralised_art_mcp/generated/api_contracts.json"
                 self.assertIn(contract_path, names)
                 self.assertIn("POST_publishPrepare", archive.read(contract_path).decode("utf-8"))
-                primer_path = "src/dcn_mcp/resources/core/dcn_core_primer.md"
+                primer_path = "src/decentralised_art_mcp/resources/core/primer.md"
                 self.assertIn(primer_path, names)
                 self.assertIn("core.simulate_connector", archive.read(primer_path).decode("utf-8"))
                 manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
-                self.assertEqual(manifest["name"], "dcn-mcp")
+                self.assertEqual(manifest["name"], "decentralised-art-mcp")
                 tool_names = {tool["name"] for tool in manifest["tools"]}
                 self.assertIn("core.publish_entity", tool_names)
                 self.assertIn("core.confirm_publication", tool_names)

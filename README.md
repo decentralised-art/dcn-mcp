@@ -3,6 +3,9 @@
 This repository provides the decentralised.art MCP server and its `decentralised-art-mcp` CLI.
 It exposes format-agnostic protocol operations under the `core.*` namespace.
 
+Agents can read the full decentralised.art documentation in markdown, starting from
+https://decentralised.art/llms.txt.
+
 If you are a user of this repo, the important question is simple:
 
 - install it
